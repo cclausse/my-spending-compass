@@ -112,7 +112,7 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Select value={monthFilter} onValueChange={setMonthFilter}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Velg måned" />
@@ -137,6 +137,34 @@ export function Dashboard() {
             ))}
           </SelectContent>
         </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-48 justify-start gap-2">
+              <Filter className="h-4 w-4" />
+              {categoryFilter.size === 0 ? 'Alle kategorier' : `${categoryFilter.size} kategorier`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
+            <div className="space-y-2">
+              <button
+                className="text-xs text-muted-foreground hover:text-foreground underline"
+                onClick={() => setCategoryFilter(new Set())}
+              >
+                Nullstill
+              </button>
+              {allCategories.map(cat => (
+                <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={categoryFilter.has(cat)}
+                    onCheckedChange={() => toggleCategory(cat)}
+                  />
+                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] }} />
+                  {CATEGORY_LABELS[cat]}
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Stats */}
