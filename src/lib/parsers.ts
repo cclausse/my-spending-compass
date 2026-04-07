@@ -66,7 +66,7 @@ export function parseBankCSV(content: string): Transaction[] {
       date: parseNorwegianDate(dato),
       description: beskrivelse,
       amount,
-      category: categorize(beskrivelse),
+      category: categorize(beskrivelse, 'bank'),
       source: 'bank',
       sourceLabel: 'Regningskonto',
     });
@@ -105,7 +105,7 @@ export function parseAmexCSV(content: string): Transaction[] {
       date: parseUSDate(dato),
       description: beskrivelse,
       amount: normalizedAmount,
-      category: categorize(beskrivelse),
+      category: categorize(beskrivelse, 'amex'),
       source: 'amex',
       sourceLabel: 'AMEX',
     });

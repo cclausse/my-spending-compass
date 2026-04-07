@@ -24,6 +24,18 @@ export type Category =
   | 'bolig'
   | 'forsikring'
   | 'overforinger'
+  | 'bom_parkering'
+  | 'bolig_hytte'
+  | 'berge_sr'
+  | 'lag_foreninger'
+  | 'eksterne_overforinger'
+  | 'laan'
+  | 'ikke_bestemt'
+  | 'interne_overforinger'
+  | 'kredittkort'
+  | 'kultur'
+  | 'per'
+  | 'strom'
   | 'annet';
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -47,9 +59,21 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   konserter: 'Konserter',
   sport_fritid: 'Sport/Fritid',
   gebyrer: 'Gebyrer',
-  bolig: 'Bolig & Strøm',
+  bolig: 'Bolig',
   forsikring: 'Forsikring',
   overforinger: 'Overføringer',
+  bom_parkering: 'Bom/Parkering',
+  bolig_hytte: 'Bolig/Hytte',
+  berge_sr: 'Berge SR',
+  lag_foreninger: 'Lag og foreninger',
+  eksterne_overforinger: 'Eksterne overføringer',
+  laan: 'Lån',
+  ikke_bestemt: 'Ikke bestemt',
+  interne_overforinger: 'Interne overføringer',
+  kredittkort: 'Kredittkort',
+  kultur: 'Kultur',
+  per: 'Per',
+  strom: 'Strøm',
   annet: 'Annet',
 };
 
@@ -77,6 +101,18 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   bolig: 'hsl(40, 60%, 50%)',
   forsikring: 'hsl(240, 40%, 55%)',
   overforinger: 'hsl(220, 30%, 60%)',
+  bom_parkering: 'hsl(30, 50%, 50%)',
+  bolig_hytte: 'hsl(45, 55%, 45%)',
+  berge_sr: 'hsl(170, 40%, 50%)',
+  lag_foreninger: 'hsl(260, 45%, 55%)',
+  eksterne_overforinger: 'hsl(310, 40%, 50%)',
+  laan: 'hsl(195, 55%, 45%)',
+  ikke_bestemt: 'hsl(0, 0%, 65%)',
+  interne_overforinger: 'hsl(215, 35%, 55%)',
+  kredittkort: 'hsl(350, 50%, 50%)',
+  kultur: 'hsl(290, 50%, 50%)',
+  per: 'hsl(175, 45%, 45%)',
+  strom: 'hsl(55, 65%, 45%)',
   annet: 'hsl(0, 0%, 55%)',
 };
 
