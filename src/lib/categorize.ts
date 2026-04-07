@@ -35,7 +35,7 @@ const bankRules: Rule[] = [
     ],
     category: "eksterne_overforinger",
   },
-  { keys: ["hamleys", "elkjop", "power", "komplett"], category: "elektronikk" },
+  { keys: ["hamleys", "elkjop", "power", "komplett", "elektroimportoeren "], category: "elektronikk" },
   { keys: ["forsikring", "fremtind", "storebrand", "gjensidige"], category: "forsikring" },
   { keys: ["varsling", "gebyr", "zolva", "trumfp", "intrum", "kravia", "rente"], category: "gebyrer" },
   {
