@@ -35,6 +35,7 @@ export function Dashboard() {
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
+  const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
 
   const months = useMemo(() => {
     const set = new Set<string>();
