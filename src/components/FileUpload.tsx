@@ -42,8 +42,10 @@ export function FileUpload() {
   }, [addTransactions]);
 
   const handleFiles = useCallback(async (files: FileList) => {
+    const fileArray = Array.from(files);
+    storeFiles(fileArray);
     const fileResults: FileResult[] = [];
-    for (const file of Array.from(files)) {
+    for (const file of fileArray) {
       const result = await processFile(file);
       fileResults.push(result);
     }
@@ -53,7 +55,7 @@ export function FileUpload() {
     if (total > 0) {
       toast({ title: `${total} transaksjoner importert`, description: `Fra ${fileResults.filter(r => r.status === 'success').length} fil(er)` });
     }
-  }, [processFile, toast]);
+  }, [processFile, toast, storeFiles]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
