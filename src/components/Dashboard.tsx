@@ -37,10 +37,18 @@ export function Dashboard() {
     return Array.from(set).sort().reverse();
   }, [transactions]);
 
+  const sources = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach(t => set.add(t.sourceLabel));
+    return Array.from(set).sort();
+  }, [transactions]);
+
   const filtered = useMemo(() => {
-    if (monthFilter === 'all') return transactions;
-    return transactions.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
-  }, [transactions, monthFilter]);
+    let result = transactions;
+    if (monthFilter !== 'all') result = result.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
+    if (sourceFilter !== 'all') result = result.filter(t => t.sourceLabel === sourceFilter);
+    return result;
+  }, [transactions, monthFilter, sourceFilter]);
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
