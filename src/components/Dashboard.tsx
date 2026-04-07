@@ -261,6 +261,19 @@ export function Dashboard() {
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Refresh button */}
+        <div className="ml-auto">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing || storedFileCount === 0}
+            title="Les inn filer på nytt"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
