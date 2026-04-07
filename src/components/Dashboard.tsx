@@ -6,9 +6,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 function StatCard({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType; className?: string }) {
   return (
@@ -35,11 +36,25 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
 }
 
 export function Dashboard() {
-  const { transactions } = useTransactions();
+  const { transactions, refreshFiles, storedFileCount } = useTransactions();
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshFiles();
+      toast({ title: 'Oppdatert', description: 'Filene er lest inn på nytt' });
+    } catch {
+      toast({ title: 'Feil', description: 'Kunne ikke lese filene på nytt', variant: 'destructive' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // All available months & sources (global)
   const allMonths = useMemo(() => {
@@ -246,6 +261,19 @@ export function Dashboard() {
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Refresh button */}
+        <div className="ml-auto">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing || storedFileCount === 0}
+            title="Les inn filer på nytt"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
