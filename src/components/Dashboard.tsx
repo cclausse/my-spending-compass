@@ -29,6 +29,7 @@ const formatNOK = (n: number) => new Intl.NumberFormat('nb-NO', { style: 'curren
 export function Dashboard() {
   const { transactions } = useTransactions();
   const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
 
   const months = useMemo(() => {
     const set = new Set<string>();
