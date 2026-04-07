@@ -13,6 +13,7 @@ interface TransactionState {
 
 const TransactionContext = createContext<TransactionState | null>(null);
 
+
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const storedFilesRef = useRef<File[]>([]);
