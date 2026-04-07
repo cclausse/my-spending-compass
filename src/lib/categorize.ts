@@ -37,7 +37,7 @@ const bankRules: Rule[] = [
   },
   { keys: ["hamleys", "elkjop", "power", "komplett"], category: "elektronikk" },
   { keys: ["forsikring", "fremtind", "storebrand", "gjensidige"], category: "forsikring" },
-  { keys: ["varsling", "gebyr", "zolva", "trumfp", "intrum", "kravia"], category: "gebyrer" },
+  { keys: ["varsling", "gebyr", "zolva", "trumfp", "intrum", "kravia", "rente"], category: "gebyrer" },
   { keys: ["dronningens tenner", "apotek", "boots", "legen", "tannlege", "melin collectors"], category: "helse" },
   { keys: ["lån", "statens pensjon"], category: "laan" },
   { keys: ["lyse tele"], category: "mobil" },
@@ -82,7 +82,7 @@ const bankRules: Rule[] = [
     keys: ["tfl travel", "vy", "ruter", "uber", "bolt", "bensin", "circle k", "shell", "entur web", "atb app"],
     category: "transport",
   },
-  { keys: ["espos", "kahoot", "openai", "chatgpt", "pluralsight"], category: "jobb" },
+  { keys: ["espos", "kahoot", "openai", "chatgpt", "pluralsight", "fl studio"], category: "jobb" },
 ];
 
 const amexRules: Rule[] = [
@@ -128,6 +128,7 @@ const amexRules: Rule[] = [
       "juan les pins",
       "duty-free",
       "a316",
+      "klm",
     ],
     category: "reise",
   },
@@ -168,7 +169,7 @@ const amexRules: Rule[] = [
       "lillywhites",
       "mango london",
     ],
-    category: "klaer",
+    category: "klær",
   },
   { keys: ["voi", "dott", "ryde"], category: "sparkesykkel" },
   { keys: ["trd olearys", "bakeri", "dromedar", "sprø", "snurr"], category: "kafe" },
@@ -182,7 +183,7 @@ const amexRules: Rule[] = [
   { keys: ["polet"], category: "polet" },
   { keys: ["ticketmaster"], category: "konserter" },
   { keys: ["sport", "medlem", "vertical playground"], category: "sport_fritid" },
-  { keys: ["fee", "gebyr"], category: "gebyrer" },
+  { keys: ["fee", "gebyr", "rente"], category: "gebyrer" },
   { keys: ["forsikring", "gjensidige", "tryg", "fremtind", "storebrand"], category: "forsikring" },
 ];
 
