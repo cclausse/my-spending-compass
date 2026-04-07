@@ -29,6 +29,7 @@ const formatNOK = (n: number) => new Intl.NumberFormat('nb-NO', { style: 'curren
 export function Dashboard() {
   const { transactions } = useTransactions();
   const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
 
   const months = useMemo(() => {
     const set = new Set<string>();
@@ -36,10 +37,18 @@ export function Dashboard() {
     return Array.from(set).sort().reverse();
   }, [transactions]);
 
+  const sources = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach(t => set.add(t.sourceLabel));
+    return Array.from(set).sort();
+  }, [transactions]);
+
   const filtered = useMemo(() => {
-    if (monthFilter === 'all') return transactions;
-    return transactions.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
-  }, [transactions, monthFilter]);
+    let result = transactions;
+    if (monthFilter !== 'all') result = result.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
+    if (sourceFilter !== 'all') result = result.filter(t => t.sourceLabel === sourceFilter);
+    return result;
+  }, [transactions, monthFilter, sourceFilter]);
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
@@ -94,6 +103,17 @@ export function Dashboard() {
               <SelectItem key={m} value={m}>
                 {format(new Date(m + '-01'), 'MMMM yyyy', { locale: nb })}
               </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sourceFilter} onValueChange={setSourceFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Velg kilde" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle kontoer</SelectItem>
+            {sources.map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
           </SelectContent>
         </Select>
