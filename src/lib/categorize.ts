@@ -156,7 +156,7 @@ const amexRules: Rule[] = [
   { keys: ["zwift", "spond", "trainerroad"], category: "trening" },
   { keys: ["lyse tele"], category: "mobil" },
   { keys: ["hamleys", "elkjop", "power", "komplett"], category: "elektronikk" },
-  { keys: ["apotek", "boots", "legen", "tannlege", "vita2700trondheimt"], category: "helse" },
+  { keys: ["apotek", "boots", "legen", "tannlege", "vita2700trondheimt", "Tannklinikk"], category: "helse" },
   {
     keys: [
       "retro",
