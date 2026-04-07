@@ -33,6 +33,7 @@ export function Dashboard() {
   const { transactions } = useTransactions();
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
 
   const months = useMemo(() => {
     const set = new Set<string>();
