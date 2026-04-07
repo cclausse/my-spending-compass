@@ -15,7 +15,7 @@ interface FileResult {
 }
 
 export function FileUpload() {
-  const { addTransactions } = useTransactions();
+  const { addTransactions, storeFiles } = useTransactions();
   const { toast } = useToast();
   const [results, setResults] = useState<FileResult[]>([]);
   const [isDragging, setIsDragging] = useState(false);
