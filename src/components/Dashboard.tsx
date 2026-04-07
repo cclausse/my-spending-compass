@@ -164,12 +164,20 @@ export function Dashboard() {
           </PopoverTrigger>
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground underline"
-                onClick={() => setCategoryFilter(new Set())}
-              >
-                Nullstill
-              </button>
+              <div className="flex gap-2">
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setCategoryFilter(new Set(allCategories))}
+                >
+                  Alle
+                </button>
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setCategoryFilter(new Set())}
+                >
+                  Nullstill
+                </button>
+              </div>
               {allCategories.map(cat => (
                 <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
                   <Checkbox
@@ -183,13 +191,41 @@ export function Dashboard() {
             </div>
           </PopoverContent>
         </Popover>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Totalt forbruk" value={formatNOK(Math.abs(totalExpenses))} icon={TrendingDown} className="bg-destructive/10 text-destructive" />
-        <StatCard title="Inntekter" value={formatNOK(totalIncome)} icon={TrendingUp} className="bg-green-100 text-green-700" />
-        <StatCard title="Netto" value={formatNOK(totalIncome + totalExpenses)} icon={ArrowUpDown} className="bg-primary/10 text-primary" />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-48 justify-start gap-2">
+              <Search className="h-4 w-4" />
+              {descriptionFilter.size === 0 ? 'Alle beskrivelser' : `${descriptionFilter.size} valgt`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 max-h-80 overflow-y-auto p-3" align="start">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setDescriptionFilter(new Set(allDescriptions))}
+                >
+                  Alle
+                </button>
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setDescriptionFilter(new Set())}
+                >
+                  Nullstill
+                </button>
+              </div>
+              {allDescriptions.map(desc => (
+                <label key={desc} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={descriptionFilter.has(desc)}
+                    onCheckedChange={() => toggleDescription(desc)}
+                  />
+                  <span className="truncate max-w-52">{desc}</span>
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Charts */}
