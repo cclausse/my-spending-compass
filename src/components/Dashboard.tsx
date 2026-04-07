@@ -55,11 +55,26 @@ export function Dashboard() {
     return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
   }, [transactions]);
 
+  const allDescriptions = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach(t => set.add(t.description));
+    return Array.from(set).sort();
+  }, [transactions]);
+
   const toggleCategory = (cat: Category) => {
     setCategoryFilter(prev => {
       const next = new Set(prev);
       if (next.has(cat)) next.delete(cat);
       else next.add(cat);
+      return next;
+    });
+  };
+
+  const toggleDescription = (desc: string) => {
+    setDescriptionFilter(prev => {
+      const next = new Set(prev);
+      if (next.has(desc)) next.delete(desc);
+      else next.add(desc);
       return next;
     });
   };
