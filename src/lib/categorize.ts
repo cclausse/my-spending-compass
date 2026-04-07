@@ -35,7 +35,7 @@ const bankRules: Rule[] = [
     ],
     category: "eksterne_overforinger",
   },
-  { keys: ["hamleys", "elkjop", "power", "komplett", "elektroimportoeren "], category: "elektronikk" },
+  { keys: ["hamleys", "elkjop", "power", "komplett"], category: "elektronikk" },
   { keys: ["forsikring", "fremtind", "storebrand", "gjensidige"], category: "forsikring" },
   { keys: ["varsling", "gebyr", "zolva", "trumfp", "intrum", "kravia", "rente"], category: "gebyrer" },
   {
@@ -155,7 +155,7 @@ const amexRules: Rule[] = [
   },
   { keys: ["zwift", "spond", "trainerroad"], category: "trening" },
   { keys: ["lyse tele"], category: "mobil" },
-  { keys: ["hamleys", "elkjop", "power", "komplett"], category: "elektronikk" },
+  { keys: ["hamleys", "elkjop", "power", "komplett", "elektroimportoeren"], category: "elektronikk" },
   { keys: ["apotek", "boots", "legen", "tannlege", "vita2700trondheimt", "tannklinikk"], category: "helse" },
   {
     keys: [
