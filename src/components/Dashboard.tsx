@@ -36,11 +36,25 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
 }
 
 export function Dashboard() {
-  const { transactions } = useTransactions();
+  const { transactions, refreshFiles, storedFileCount } = useTransactions();
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshFiles();
+      toast({ title: 'Oppdatert', description: 'Filene er lest inn på nytt' });
+    } catch {
+      toast({ title: 'Feil', description: 'Kunne ikke lese filene på nytt', variant: 'destructive' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // All available months & sources (global)
   const allMonths = useMemo(() => {
