@@ -47,14 +47,28 @@ export function Dashboard() {
     return Array.from(set).sort();
   }, [transactions]);
 
+  const allCategories = useMemo(() => {
+    const set = new Set<Category>();
+    transactions.forEach(t => set.add(t.category));
+    return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
+  }, [transactions]);
+
+  const toggleCategory = (cat: Category) => {
+    setCategoryFilter(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   const filtered = useMemo(() => {
     let result = transactions;
     if (monthFilter !== 'all') result = result.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
     if (sourceFilter !== 'all') result = result.filter(t => t.sourceLabel === sourceFilter);
+    if (categoryFilter.size > 0) result = result.filter(t => categoryFilter.has(t.category));
     return result;
-  }, [transactions, monthFilter, sourceFilter]);
-
-  const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
+  }, [transactions, monthFilter, sourceFilter, categoryFilter]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
 
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
