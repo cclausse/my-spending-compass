@@ -131,7 +131,7 @@ export function Dashboard() {
       if (t.amount < 0) entry.expenses += Math.abs(t.amount);
       else entry.income += t.amount;
     });
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v);
+    return Array.from(map.entries()).sort(([a], [b]) => (a ?? '').localeCompare(b ?? '')).map(([, v]) => v);
   }, [filtered]);
 
   if (transactions.length === 0) {

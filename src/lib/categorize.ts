@@ -168,7 +168,7 @@ const amexRules: Rule[] = [
       "lillywhites",
       "mango london",
     ],
-    category: "klær",
+    category: "klaer",
   },
   { keys: ["voi", "dott", "ryde"], category: "sparkesykkel" },
   { keys: ["trd olearys", "bakeri", "dromedar", "sprø", "snurr"], category: "kafe" },
