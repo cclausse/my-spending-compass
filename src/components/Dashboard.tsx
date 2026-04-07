@@ -4,7 +4,10 @@ import { useTransactions } from '@/context/TransactionContext';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Category } from '@/types/transaction';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
@@ -30,6 +33,7 @@ export function Dashboard() {
   const { transactions } = useTransactions();
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
 
   const months = useMemo(() => {
     const set = new Set<string>();
@@ -43,12 +47,28 @@ export function Dashboard() {
     return Array.from(set).sort();
   }, [transactions]);
 
+  const allCategories = useMemo(() => {
+    const set = new Set<Category>();
+    transactions.forEach(t => set.add(t.category));
+    return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
+  }, [transactions]);
+
+  const toggleCategory = (cat: Category) => {
+    setCategoryFilter(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   const filtered = useMemo(() => {
     let result = transactions;
     if (monthFilter !== 'all') result = result.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
     if (sourceFilter !== 'all') result = result.filter(t => t.sourceLabel === sourceFilter);
+    if (categoryFilter.size > 0) result = result.filter(t => categoryFilter.has(t.category));
     return result;
-  }, [transactions, monthFilter, sourceFilter]);
+  }, [transactions, monthFilter, sourceFilter, categoryFilter]);
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
@@ -92,7 +112,7 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Select value={monthFilter} onValueChange={setMonthFilter}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Velg måned" />
@@ -117,6 +137,34 @@ export function Dashboard() {
             ))}
           </SelectContent>
         </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-48 justify-start gap-2">
+              <Filter className="h-4 w-4" />
+              {categoryFilter.size === 0 ? 'Alle kategorier' : `${categoryFilter.size} kategorier`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
+            <div className="space-y-2">
+              <button
+                className="text-xs text-muted-foreground hover:text-foreground underline"
+                onClick={() => setCategoryFilter(new Set())}
+              >
+                Nullstill
+              </button>
+              {allCategories.map(cat => (
+                <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={categoryFilter.has(cat)}
+                    onCheckedChange={() => toggleCategory(cat)}
+                  />
+                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] }} />
+                  {CATEGORY_LABELS[cat]}
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Stats */}
