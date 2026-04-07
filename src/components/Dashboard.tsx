@@ -3,12 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransactions } from '@/context/TransactionContext';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Category } from '@/types/transaction';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
@@ -30,67 +28,88 @@ function StatCard({ title, value, icon: Icon, className }: { title: string; valu
 
 const formatNOK = (n: number) => new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 }).format(n);
 
+function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
+  const next = new Set(prev);
+  if (next.has(item)) next.delete(item); else next.add(item);
+  return next;
+}
+
 export function Dashboard() {
   const { transactions } = useTransactions();
-  const [monthFilter, setMonthFilter] = useState<string>('all');
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
+  const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
 
-  const months = useMemo(() => {
+  // All available months & sources (global)
+  const allMonths = useMemo(() => {
     const set = new Set<string>();
     transactions.forEach(t => set.add(format(t.date, 'yyyy-MM')));
     return Array.from(set).sort().reverse();
   }, [transactions]);
 
-  const sources = useMemo(() => {
+  const allSources = useMemo(() => {
     const set = new Set<string>();
     transactions.forEach(t => set.add(t.sourceLabel));
     return Array.from(set).sort();
   }, [transactions]);
 
-  const allCategories = useMemo(() => {
-    const set = new Set<Category>();
-    transactions.forEach(t => set.add(t.category));
-    return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
-  }, [transactions]);
-
-  const allDescriptions = useMemo(() => {
-    const set = new Set<string>();
-    transactions.forEach(t => set.add(t.description));
-    return Array.from(set).sort();
-  }, [transactions]);
-
-  const toggleCategory = (cat: Category) => {
-    setCategoryFilter(prev => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
-    });
-  };
-
-  const toggleDescription = (desc: string) => {
-    setDescriptionFilter(prev => {
-      const next = new Set(prev);
-      if (next.has(desc)) next.delete(desc);
-      else next.add(desc);
-      return next;
-    });
-  };
-
-  const filtered = useMemo(() => {
+  // Step 1: filter by period + source
+  const afterPeriodAndSource = useMemo(() => {
     let result = transactions;
-    if (monthFilter !== 'all') result = result.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
-    if (sourceFilter !== 'all') result = result.filter(t => t.sourceLabel === sourceFilter);
-    if (categoryFilter.size > 0) result = result.filter(t => categoryFilter.has(t.category));
+    if (monthFilter.size > 0) result = result.filter(t => monthFilter.has(format(t.date, 'yyyy-MM')));
+    if (sourceFilter.size > 0) result = result.filter(t => sourceFilter.has(t.sourceLabel));
+    return result;
+  }, [transactions, monthFilter, sourceFilter]);
+
+  // Available categories based on period+source selection
+  const availableCategories = useMemo(() => {
+    const set = new Set<Category>();
+    afterPeriodAndSource.forEach(t => set.add(t.category));
+    return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
+  }, [afterPeriodAndSource]);
+
+  // Step 2: filter by category
+  const afterCategory = useMemo(() => {
+    if (categoryFilter.size === 0) return [];
+    return afterPeriodAndSource.filter(t => categoryFilter.has(t.category));
+  }, [afterPeriodAndSource, categoryFilter]);
+
+  // Available descriptions based on period+source+category
+  const availableDescriptions = useMemo(() => {
+    const set = new Set<string>();
+    afterCategory.forEach(t => set.add(t.description));
+    return Array.from(set).sort();
+  }, [afterCategory]);
+
+  // Step 3: final filtered result
+  const filtered = useMemo(() => {
+    if (categoryFilter.size === 0) return [];
+    let result = afterCategory;
     if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
     return result;
-  }, [transactions, monthFilter, sourceFilter, categoryFilter, descriptionFilter]);
+  }, [afterCategory, categoryFilter, descriptionFilter]);
+
+  // Clean up stale selections when available options change
+  // (category filter can only contain available categories)
+  useMemo(() => {
+    if (categoryFilter.size > 0) {
+      const valid = new Set(availableCategories);
+      const cleaned = new Set([...categoryFilter].filter(c => valid.has(c)));
+      if (cleaned.size !== categoryFilter.size) setCategoryFilter(cleaned);
+    }
+  }, [availableCategories]);
+
+  useMemo(() => {
+    if (descriptionFilter.size > 0) {
+      const valid = new Set(availableDescriptions);
+      const cleaned = new Set([...descriptionFilter].filter(d => valid.has(d)));
+      if (cleaned.size !== descriptionFilter.size) setDescriptionFilter(cleaned);
+    }
+  }, [availableDescriptions]);
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
-
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
 
@@ -104,7 +123,7 @@ export function Dashboard() {
 
   const monthlyData = useMemo(() => {
     const map = new Map<string, { month: string; expenses: number; income: number }>();
-    transactions.forEach(t => {
+    filtered.forEach(t => {
       const m = format(t.date, 'MMM yy', { locale: nb });
       const key = format(t.date, 'yyyy-MM');
       if (!map.has(key)) map.set(key, { month: m, expenses: 0, income: 0 });
@@ -113,7 +132,7 @@ export function Dashboard() {
       else entry.income += t.amount;
     });
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v);
-  }, [transactions]);
+  }, [filtered]);
 
   if (transactions.length === 0) {
     return (
@@ -131,59 +150,71 @@ export function Dashboard() {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Select value={monthFilter} onValueChange={setMonthFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Velg måned" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alle måneder</SelectItem>
-            {months.map(m => (
-              <SelectItem key={m} value={m}>
-                {format(new Date(m + '-01'), 'MMMM yyyy', { locale: nb })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={sourceFilter} onValueChange={setSourceFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Velg kilde" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alle kontoer</SelectItem>
-            {sources.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Period multi-select */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-48 justify-start gap-2">
-              <Filter className="h-4 w-4" />
-              {categoryFilter.size === 0 ? 'Alle kategorier' : `${categoryFilter.size} kategorier`}
+              <Calendar className="h-4 w-4" />
+              {monthFilter.size === 0 ? 'Alle perioder' : `${monthFilter.size} perioder`}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                  onClick={() => setCategoryFilter(new Set(allCategories))}
-                >
-                  Alle
-                </button>
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                  onClick={() => setCategoryFilter(new Set())}
-                >
-                  Nullstill
-                </button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setMonthFilter(new Set(allMonths))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setMonthFilter(new Set())}>Nullstill</button>
               </div>
-              {allCategories.map(cat => (
+              {allMonths.map(m => (
+                <label key={m} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox checked={monthFilter.has(m)} onCheckedChange={() => setMonthFilter(prev => toggleInSet(prev, m))} />
+                  {format(new Date(m + '-01'), 'MMMM yyyy', { locale: nb })}
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Source multi-select */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-48 justify-start gap-2">
+              <CreditCard className="h-4 w-4" />
+              {sourceFilter.size === 0 ? 'Alle kontoer' : `${sourceFilter.size} kontoer`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setSourceFilter(new Set(allSources))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setSourceFilter(new Set())}>Nullstill</button>
+              </div>
+              {allSources.map(s => (
+                <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox checked={sourceFilter.has(s)} onCheckedChange={() => setSourceFilter(prev => toggleInSet(prev, s))} />
+                  {s}
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Category multi-select (cascaded from period+source) */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-48 justify-start gap-2">
+              <Filter className="h-4 w-4" />
+              {categoryFilter.size === 0 ? 'Ingen kategorier' : `${categoryFilter.size} kategorier`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCategoryFilter(new Set(availableCategories))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCategoryFilter(new Set())}>Nullstill</button>
+              </div>
+              {availableCategories.map(cat => (
                 <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox
-                    checked={categoryFilter.has(cat)}
-                    onCheckedChange={() => toggleCategory(cat)}
-                  />
+                  <Checkbox checked={categoryFilter.has(cat)} onCheckedChange={() => setCategoryFilter(prev => toggleInSet(prev, cat))} />
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] }} />
                   {CATEGORY_LABELS[cat]}
                 </label>
@@ -191,6 +222,8 @@ export function Dashboard() {
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Description multi-select (cascaded from period+source+category) */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-48 justify-start gap-2">
@@ -201,25 +234,12 @@ export function Dashboard() {
           <PopoverContent className="w-72 max-h-80 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                  onClick={() => setDescriptionFilter(new Set(allDescriptions))}
-                >
-                  Alle
-                </button>
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                  onClick={() => setDescriptionFilter(new Set())}
-                >
-                  Nullstill
-                </button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setDescriptionFilter(new Set(availableDescriptions))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setDescriptionFilter(new Set())}>Nullstill</button>
               </div>
-              {allDescriptions.map(desc => (
+              {availableDescriptions.map(desc => (
                 <label key={desc} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox
-                    checked={descriptionFilter.has(desc)}
-                    onCheckedChange={() => toggleDescription(desc)}
-                  />
+                  <Checkbox checked={descriptionFilter.has(desc)} onCheckedChange={() => setDescriptionFilter(prev => toggleInSet(prev, desc))} />
                   <span className="truncate max-w-52">{desc}</span>
                 </label>
               ))}
