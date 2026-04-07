@@ -84,8 +84,9 @@ export function Dashboard() {
     if (monthFilter !== 'all') result = result.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
     if (sourceFilter !== 'all') result = result.filter(t => t.sourceLabel === sourceFilter);
     if (categoryFilter.size > 0) result = result.filter(t => categoryFilter.has(t.category));
+    if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
     return result;
-  }, [transactions, monthFilter, sourceFilter, categoryFilter]);
+  }, [transactions, monthFilter, sourceFilter, categoryFilter, descriptionFilter]);
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
