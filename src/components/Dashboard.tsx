@@ -69,6 +69,8 @@ export function Dashboard() {
     if (categoryFilter.size > 0) result = result.filter(t => categoryFilter.has(t.category));
     return result;
   }, [transactions, monthFilter, sourceFilter, categoryFilter]);
+
+  const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
 
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
