@@ -1,34 +1,35 @@
 import { Category } from '@/types/transaction';
 
-const rules: Array<{ pattern: RegExp; category: Category }> = [
-  // Mat
-  { pattern: /rema|kiwi|bunnpris|coop|meny|spar\b|extra|joker|europris|dagligvare|grocery|supermarket|bakeri|restaurant|cafe|pizza|burger|sushi|mat\b|food/i, category: 'mat' },
-  // Transport
-  { pattern: /circle\s?k|esso|shell|st1|uno-x|bensin|fuel|taxi|uber|bolt|ruter|atb|kolumbus|skyss|flybuss|parkering|parking|bom\b|toll|autopass/i, category: 'transport' },
-  // Bolig
-  { pattern: /husleie|leie|strøm|strom|fjordkraft|tibber|hafslund|lyse|agva|kommunale|vann\b|avfall|renovasjon|felleskost|borettslag|sameie/i, category: 'bolig' },
-  // Forsikring
-  { pattern: /forsikring|insurance|if\b|gjensidige|tryg|fremtind|storebrand|dnb\s?forsikring|codan/i, category: 'forsikring' },
-  // Reise
-  { pattern: /sas\b|norwegian\b|widerøe|fly\b|flight|hotel|airbnb|booking\.com|radisson|scandic|thon|hurtigruten/i, category: 'reise' },
-  // Underholdning
-  { pattern: /netflix|spotify|hbo|disney|youtube|viaplay|tv2\s?sumo|kino|cinema|teater|konsert|ticketmaster|billettt/i, category: 'underholdning' },
-  // Abonnementer
-  { pattern: /telenor|telia|ice\b|altibox|get\b|canal\s?digital|apple\.com|google\s?storage|icloud|microsoft|adobe/i, category: 'abonnementer' },
-  // Klær
-  { pattern: /h&m|zara|cubus|dressmann|stormberg|xxl|sport1|intersport|nike|adidas|zalando|boozt/i, category: 'klaer' },
-  // Helse
-  { pattern: /apotek|pharmacy|lege|legevakt|tannlege|dentist|sykehus|hospital|helsestasjon|optiker|brilleland|synsam/i, category: 'helse' },
-  // Overføringer
-  { pattern: /overføring|overf|vipps|nettbank|mobilbank|til\s?konto|fra\s?konto/i, category: 'overforinger' },
-  // Inntekt
-  { pattern: /lønn|lonn|salary|utbetaling|refusjon|tilbakebetaling|refund/i, category: 'inntekt' },
+const rules: Array<{ keys: string[]; category: Category }> = [
+  { keys: ['extra', 'joker', 'rema', 'kiwi', 'coop', 'bunnpris', 'spar', 'meny', 'obs city lade', 'city syd'], category: 'dagligvarer' },
+  { keys: ['8446-v2', 'pizza', 'det sorte faar', 'fox grill', 'arsenal footbal', 'hard rock', 'cafe', 'espresso', 'restaurant', 'nandos', 'wildwood kitchen', 'feniqia', 'amundsen bryggeri', 'grilleriet'], category: 'restaurant' },
+  { keys: ['tfl travel', 'vy', 'ruter', 'uber', 'bolt', 'bensin', 'circle k', 'shell', 'entur web', 'atb app'], category: 'transport' },
+  { keys: ['tilburg', 'trainline', 'relay 373522 nice', 'chez pipo', 'antibes', 'hotel', 'airbnb', 'booking', 'sas', 'norwegian', 'juan les pins', 'duty-free', 'a316'], category: 'reise' },
+  { keys: ['resumaker', 'telenor', 'ark valentinlyst', 'apple', 'aws', 'disney', 'strim', 'prime', 'spotify', 'netflix', 'icloud', 'tv2', 'tv 2'], category: 'tv_media' },
+  { keys: ['zwift', 'spond', 'trainerroad'], category: 'trening' },
+  { keys: ['lyse tele'], category: 'mobil' },
+  { keys: ['hamleys', 'elkjop', 'power', 'komplett'], category: 'elektronikk' },
+  { keys: ['apotek', 'boots', 'legen', 'tannlege', 'vita2700trondheimt'], category: 'helse' },
+  { keys: ['retro', 'carma', 'classic footbal', 'xxl', 'nike', 'adidas', 'zalando', 'hm', 'h&m', 'cubus', 'lillywhites', 'mango london'], category: 'klaer' },
+  { keys: ['voi', 'dott', 'ryde'], category: 'sparkesykkel' },
+  { keys: ['trd olearys', 'bakeri', 'dromedar', 'sprø', 'snurr'], category: 'kafe' },
+  { keys: ['bill kill as=trondheim', 'ikea', 'felleskjoepet', 'clas ohlson', 'biltema', 'bygg', 'gjenvinningsstasjon'], category: 'hus_hjem' },
+  { keys: ['hyre', 'tesla'], category: 'bil' },
+  { keys: ['espos', 'kahoot', 'openai', 'chatgpt', 'pluralsight'], category: 'jobb' },
+  { keys: ['refund', 'reversal', 'payment received', 'credit', 'tilbakeføring', 'takk'], category: 'innbetaling' },
+  { keys: ['polet'], category: 'polet' },
+  { keys: ['ticketmaster'], category: 'konserter' },
+  { keys: ['sport', 'medlem', 'vertical playground'], category: 'sport_fritid' },
+  { keys: ['fee', 'gebyr'], category: 'gebyrer' },
+  { keys: ['husleie', 'leie', 'strøm', 'fjordkraft', 'tibber', 'hafslund', 'lyse', 'kommunale', 'vann', 'avfall', 'renovasjon', 'felleskost', 'borettslag', 'sameie'], category: 'bolig' },
+  { keys: ['forsikring', 'insurance', 'gjensidige', 'tryg', 'fremtind', 'storebrand'], category: 'forsikring' },
+  { keys: ['overføring', 'vipps', 'nettbank'], category: 'overforinger' },
 ];
 
 export function categorize(description: string): Category {
-  const lower = description.toLowerCase();
+  const d = description.toLowerCase();
   for (const rule of rules) {
-    if (rule.pattern.test(lower)) {
+    if (rule.keys.some(k => d.includes(k))) {
       return rule.category;
     }
   }
