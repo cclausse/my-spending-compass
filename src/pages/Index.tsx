@@ -1,16 +1,40 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { FileUpload } from '@/components/FileUpload';
+import { Dashboard } from '@/components/Dashboard';
+import { TransactionProvider, useTransactions } from '@/context/TransactionContext';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+function PageContent() {
+  const { transactions, clearTransactions } = useTransactions();
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="container mx-auto flex items-center justify-between py-4 px-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Økonomi&shy;oversikt</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Analyser og kategoriser ditt forbruk</p>
+          </div>
+          {transactions.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearTransactions} className="text-muted-foreground">
+              <Trash2 className="h-4 w-4 mr-1" /> Nullstill
+            </Button>
+          )}
+        </div>
+      </header>
+
+      <main className="container mx-auto py-6 px-4 space-y-6">
+        <FileUpload />
+        <Dashboard />
+      </main>
     </div>
   );
-};
+}
 
-const Index = PlaceholderIndex;
+const Index = () => (
+  <TransactionProvider>
+    <PageContent />
+  </TransactionProvider>
+);
 
 export default Index;
