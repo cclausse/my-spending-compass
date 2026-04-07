@@ -228,7 +228,13 @@ export function Dashboard() {
         </Popover>
       </div>
 
-      {/* Charts */}
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard title="Totalt forbruk" value={formatNOK(Math.abs(totalExpenses))} icon={TrendingDown} className="bg-destructive/10 text-destructive" />
+        <StatCard title="Inntekter" value={formatNOK(totalIncome)} icon={TrendingUp} className="bg-green-100 text-green-700" />
+        <StatCard title="Netto" value={formatNOK(totalIncome + totalExpenses)} icon={ArrowUpDown} className="bg-primary/10 text-primary" />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Pie */}
         <Card>
