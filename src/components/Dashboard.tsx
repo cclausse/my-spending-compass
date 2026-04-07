@@ -106,6 +106,17 @@ export function Dashboard() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={sourceFilter} onValueChange={setSourceFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Velg kilde" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle kontoer</SelectItem>
+            {sources.map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Stats */}
