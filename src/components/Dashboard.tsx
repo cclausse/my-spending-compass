@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
@@ -34,6 +35,7 @@ export function Dashboard() {
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
+  const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
 
   const months = useMemo(() => {
     const set = new Set<string>();
@@ -53,6 +55,12 @@ export function Dashboard() {
     return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
   }, [transactions]);
 
+  const allDescriptions = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach(t => set.add(t.description));
+    return Array.from(set).sort();
+  }, [transactions]);
+
   const toggleCategory = (cat: Category) => {
     setCategoryFilter(prev => {
       const next = new Set(prev);
@@ -62,13 +70,23 @@ export function Dashboard() {
     });
   };
 
+  const toggleDescription = (desc: string) => {
+    setDescriptionFilter(prev => {
+      const next = new Set(prev);
+      if (next.has(desc)) next.delete(desc);
+      else next.add(desc);
+      return next;
+    });
+  };
+
   const filtered = useMemo(() => {
     let result = transactions;
     if (monthFilter !== 'all') result = result.filter(t => format(t.date, 'yyyy-MM') === monthFilter);
     if (sourceFilter !== 'all') result = result.filter(t => t.sourceLabel === sourceFilter);
     if (categoryFilter.size > 0) result = result.filter(t => categoryFilter.has(t.category));
+    if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
     return result;
-  }, [transactions, monthFilter, sourceFilter, categoryFilter]);
+  }, [transactions, monthFilter, sourceFilter, categoryFilter, descriptionFilter]);
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
@@ -146,12 +164,20 @@ export function Dashboard() {
           </PopoverTrigger>
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground underline"
-                onClick={() => setCategoryFilter(new Set())}
-              >
-                Nullstill
-              </button>
+              <div className="flex gap-2">
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setCategoryFilter(new Set(allCategories))}
+                >
+                  Alle
+                </button>
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setCategoryFilter(new Set())}
+                >
+                  Nullstill
+                </button>
+              </div>
               {allCategories.map(cat => (
                 <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
                   <Checkbox
@@ -160,6 +186,41 @@ export function Dashboard() {
                   />
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] }} />
                   {CATEGORY_LABELS[cat]}
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-48 justify-start gap-2">
+              <Search className="h-4 w-4" />
+              {descriptionFilter.size === 0 ? 'Alle beskrivelser' : `${descriptionFilter.size} valgt`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 max-h-80 overflow-y-auto p-3" align="start">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setDescriptionFilter(new Set(allDescriptions))}
+                >
+                  Alle
+                </button>
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setDescriptionFilter(new Set())}
+                >
+                  Nullstill
+                </button>
+              </div>
+              {allDescriptions.map(desc => (
+                <label key={desc} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={descriptionFilter.has(desc)}
+                    onCheckedChange={() => toggleDescription(desc)}
+                  />
+                  <span className="truncate max-w-52">{desc}</span>
                 </label>
               ))}
             </div>
@@ -174,7 +235,6 @@ export function Dashboard() {
         <StatCard title="Netto" value={formatNOK(totalIncome + totalExpenses)} icon={ArrowUpDown} className="bg-primary/10 text-primary" />
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Pie */}
         <Card>
