@@ -7,7 +7,7 @@ interface TransactionState {
   loading: boolean;
   refreshTransactions: () => Promise<void>;
   clearTransactions: () => void;
-  updateCategory: (transactionId: string, category: Category) => Promise<void>;
+  updateCategory: (transactionId: string, category: Category) => Promise<number>;
 }
 
 const TransactionContext = createContext<TransactionState | null>(null);
