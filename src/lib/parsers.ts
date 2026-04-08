@@ -70,7 +70,7 @@ export function parseBankCSV(content: string): Transaction[] {
       source: 'bank',
       sourceLabel: 'Regningskonto',
       costType: 'V',
-  }
+    });
 
   return transactions;
 }
