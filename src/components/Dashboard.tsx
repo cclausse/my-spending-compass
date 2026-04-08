@@ -47,10 +47,10 @@ export function Dashboard() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refreshFiles();
-      toast({ title: 'Oppdatert', description: 'Filene er lest inn på nytt' });
+      await refreshTransactions();
+      toast({ title: 'Oppdatert', description: 'Transaksjoner hentet fra databasen' });
     } catch {
-      toast({ title: 'Feil', description: 'Kunne ikke lese filene på nytt', variant: 'destructive' });
+      toast({ title: 'Feil', description: 'Kunne ikke hente transaksjoner', variant: 'destructive' });
     } finally {
       setIsRefreshing(false);
     }
@@ -149,13 +149,24 @@ export function Dashboard() {
     return Array.from(map.entries()).sort(([a], [b]) => (a ?? '').localeCompare(b ?? '')).map(([, v]) => v);
   }, [filtered]);
 
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <Wallet className="h-12 w-12 text-muted-foreground/40 mb-4 animate-pulse" />
+          <p className="text-lg font-medium text-muted-foreground">Laster transaksjoner…</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (transactions.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
           <Wallet className="h-12 w-12 text-muted-foreground/40 mb-4" />
           <p className="text-lg font-medium text-muted-foreground">Ingen transaksjoner ennå</p>
-          <p className="text-sm text-muted-foreground/70 mt-1">Last opp en CSV-fil for å komme i gang</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">Gå til Import-siden for å laste opp bankfiler</p>
         </CardContent>
       </Card>
     );
@@ -268,7 +279,7 @@ export function Dashboard() {
             variant="outline"
             size="icon"
             onClick={handleRefresh}
-            disabled={isRefreshing || storedFileCount === 0}
+            disabled={isRefreshing}
             title="Les inn filer på nytt"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
