@@ -19,6 +19,7 @@ interface ParsedTransaction {
   category: string;
   account_external_id?: string;
   card_external_id?: string;
+  card_holder?: string;
 }
 
 interface FileParser {
