@@ -181,6 +181,7 @@ const bankParser: FileParser = {
         description_raw: beskrivelse,
         category: categorize(beskrivelse, bankRules),
         account_external_id: "regningskonto",
+        cost_type: determineCostType(beskrivelse),
       });
     }
     return txns;
@@ -218,6 +219,7 @@ const amexParser: FileParser = {
         description_raw: beskrivelse,
         category: categorize(beskrivelse, amexRules),
         card_external_id: "amex",
+        cost_type: determineCostType(beskrivelse),
       });
     }
     return txns;
@@ -412,6 +414,7 @@ const sasMCParser: FileParser = {
           category: categorize(textStr, sasMCRules),
           card_external_id: "sasmc",
           card_holder: sec.cardHolder,
+          cost_type: determineCostType(textStr),
         });
       }
     }
