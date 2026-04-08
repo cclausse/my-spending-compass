@@ -581,6 +581,7 @@ Deno.serve(async (req) => {
         category: t.category,
         account_external_id: t.account_external_id || null,
         card_external_id: t.card_external_id || null,
+        card_holder: t.card_holder || null,
         dedup_hash: hash,
       });
     }
