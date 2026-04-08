@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransactions } from '@/context/TransactionContext';
-import { CATEGORY_LABELS, CATEGORY_COLORS, Category } from '@/types/transaction';
+import { CATEGORY_LABELS, CATEGORY_COLORS, Category, CostType, COST_TYPE_LABELS } from '@/types/transaction';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -37,7 +37,7 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
 }
 
 export function Dashboard() {
-  const { transactions, loading, refreshTransactions, updateCategory } = useTransactions();
+  const { transactions, loading, refreshTransactions, updateCategory, updateCostType } = useTransactions();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
@@ -45,6 +45,7 @@ export function Dashboard() {
   const [cardHolderFilter, setCardHolderFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
+  const [costTypeFilter, setCostTypeFilter] = useState<Set<CostType>>(new Set(['F', 'V']));
   const initialized = useRef(false);
 
   const handleRefresh = async () => {
