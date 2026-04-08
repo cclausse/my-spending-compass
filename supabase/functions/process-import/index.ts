@@ -17,6 +17,7 @@ interface ParsedTransaction {
   description_raw: string;
   merchant?: string;
   category: string;
+  cost_type?: string;
   account_external_id?: string;
   card_external_id?: string;
   card_holder?: string;
@@ -97,6 +98,23 @@ function categorize(description: string, rules: Rule[]): string {
   return "annet";
 }
 
+// --- Fixed cost keywords (case-insensitive partial match) ---
+const fixedCostKeys: string[] = [
+  "lyse tele", "huseiernes", "verisure", "alarmabonnement",
+  "forsikring", "fremtind", "storebrand", "gjensidige",
+  "tensio", "tibber", "telenor", "neas", "vitnett",
+  "lån", "statens pensjon",
+  "trondheim komm", "oppdal kommune", "kommunale", "remidt", "trh kommune",
+  "samfunnsviterne", "nito",
+  "spotify", "netflix", "icloud", "tv2", "tv 2", "disney", "strim", "prime",
+  "zwift", "trainerroad", "3t ",
+];
+
+function determineCostType(description: string): string {
+  const d = description.toLowerCase();
+  return fixedCostKeys.some((k) => d.includes(k)) ? "F" : "V";
+}
+
 // ---- Helpers ----
 function parseNorwegianNumber(s: string): number {
   const cleaned = s.replace(/\u2212/g, "-").replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
@@ -163,6 +181,7 @@ const bankParser: FileParser = {
         description_raw: beskrivelse,
         category: categorize(beskrivelse, bankRules),
         account_external_id: "regningskonto",
+        cost_type: determineCostType(beskrivelse),
       });
     }
     return txns;
@@ -200,6 +219,7 @@ const amexParser: FileParser = {
         description_raw: beskrivelse,
         category: categorize(beskrivelse, amexRules),
         card_external_id: "amex",
+        cost_type: determineCostType(beskrivelse),
       });
     }
     return txns;
@@ -394,6 +414,7 @@ const sasMCParser: FileParser = {
           category: categorize(textStr, sasMCRules),
           card_external_id: "sasmc",
           card_holder: sec.cardHolder,
+          cost_type: determineCostType(textStr),
         });
       }
     }
@@ -582,6 +603,7 @@ Deno.serve(async (req) => {
         description_raw: t.description_raw,
         merchant: t.merchant || null,
         category: t.category,
+        cost_type: t.cost_type || determineCostType(t.description_raw),
         account_external_id: t.account_external_id || null,
         card_external_id: t.card_external_id || null,
         card_holder: t.card_holder || null,
