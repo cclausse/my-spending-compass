@@ -329,22 +329,22 @@ const bankNorwegianParser: FileParser = {
         }
         if (isNaN(amount) || amount === 0) continue;
 
-      // BN: negative amounts are expenses, positive are payments/credits
-      // Normalize: expenses should be negative
-      const normalizedAmount = amount;
+        const merchant = sec.merchantCol >= 0 ? String(row[sec.merchantCol] || "").trim() || undefined : undefined;
 
-      const merchant = headerMap["merchant"] != null ? String(row[headerMap["merchant"]] || "").trim() || undefined : undefined;
-
-      txns.push({
-        booking_date: bookingDate,
-        amount: normalizedAmount,
-        currency: "NOK",
-        description_raw: description,
-        merchant,
-        category: categorize(description, bnRules),
-        card_external_id: "banknorwegian",
-      });
+        txns.push({
+          booking_date: bookingDate,
+          transaction_date: transactionDate,
+          amount,
+          currency: "NOK",
+          description_raw: description,
+          merchant,
+          category: categorize(description, bnRules),
+          card_external_id: "banknorwegian",
+        });
+      }
     }
+
+    console.log(`BN parser: parsed ${txns.length} transactions`);
     return txns;
   },
 };
