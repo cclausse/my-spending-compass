@@ -36,7 +36,7 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
 }
 
 export function Dashboard() {
-  const { transactions, refreshFiles, storedFileCount } = useTransactions();
+  const { transactions, loading, refreshTransactions } = useTransactions();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
