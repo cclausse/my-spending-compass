@@ -206,12 +206,24 @@ const amexParser: FileParser = {
   },
 };
 
-// Bank Norwegian: Excel file with columns like TransactionDate, Text, Amount, etc.
+// Card number to initials mapping for Bank Norwegian
+const CARD_HOLDER_MAP: Record<string, string> = {
+  "5442": "CC",
+  "7874": "ABC",
+  "7809": "TB",
+};
+
+function cardHolderFromSection(sectionHeader: string): string | undefined {
+  // Look for last 4 digits of card number pattern like ******5442
+  const match = sectionHeader.match(/\*{4,}(\d{4})/);
+  if (match) return CARD_HOLDER_MAP[match[1]];
+  return undefined;
+}
+
 const bankNorwegianParser: FileParser = {
   sourceType: "banknorwegian",
   canParse(_content: string | ArrayBuffer, fileName: string): boolean {
     const lower = fileName.toLowerCase();
-    // BN files are xlsx and typically have "norwegian" or "bn" in the name
     return lower.endsWith(".xlsx") || lower.endsWith(".xls");
   },
   parse(content: string | ArrayBuffer): ParsedTransaction[] {
@@ -225,44 +237,75 @@ const bankNorwegianParser: FileParser = {
 
     if (rows.length < 2) throw new Error("Tomt regneark");
 
-    // Find header rows - BN files have multiple sections with repeated headers
     const dateKeys = ["dato", "date", "transactiondate", "bokføringsdato", "bookingdate"];
     const textKeys = ["text", "beskrivelse", "description", "forklaring", "spesifikasjon"];
     const amountKeys = ["beløp", "belop", "amount", "sum"];
     const merchantKeys = ["merchantcategory", "merchant", "kategori", "bransjekategori", "sted"];
 
-    // Find ALL header rows and parse sections between them
-    interface Section { headerIdx: number; dateCols: number; textCol: number; amountCol: number; merchantCol: number; bookedCol: number; }
+    // Scan all rows to find section headers (card info) and column headers
+    interface Section {
+      headerIdx: number;
+      dateCols: number;
+      textCol: number;
+      amountCol: number;
+      merchantCol: number;
+      bookedCol: number;
+      cardHolder?: string;
+      isTotaltAndre: boolean;
+    }
     const sections: Section[] = [];
+    let currentCardHolder: string | undefined;
+    let inTotaltAndre = false;
 
     for (let r = 0; r < rows.length; r++) {
       const row = rows[r];
-      if (!row || row.length < 3) continue;
-      const headers = row.map((c: any) => String(c || "").toLowerCase().replace(/\s+/g, ""));
+      if (!row || row.length === 0) continue;
 
+      // Check if this row is a card section header (contains card number pattern)
+      const firstCell = String(row[0] || "").trim();
+
+      // Detect "Totalt andre hendelser" section
+      if (/totalt andre hendelser/i.test(firstCell)) {
+        inTotaltAndre = true;
+        continue;
+      }
+
+      // Detect card number headers like "Kortnummer: 540185******5442"
+      const cardMatch = firstCell.match(/\*{4,}(\d{4})/);
+      if (cardMatch) {
+        currentCardHolder = CARD_HOLDER_MAP[cardMatch[1]];
+        inTotaltAndre = false; // New card section resets
+        continue;
+      }
+
+      // Check if row is a column header row
+      const headers = row.map((c: any) => String(c || "").toLowerCase().replace(/\s+/g, ""));
       const dateCol = headers.findIndex((h: string) => dateKeys.some(k => h === k || h.includes(k)));
       const textCol = headers.findIndex((h: string) => textKeys.some(k => h === k || h.includes(k)));
-      // For amount, prefer exact "beløp" over "utl.beløp" — use last matching column
+
       let amountCol = -1;
       for (let c = headers.length - 1; c >= 0; c--) {
-        if (amountKeys.some(k => headers[c] === k || headers[c] === k)) {
-          amountCol = c; break;
-        }
+        if (amountKeys.some(k => headers[c] === k)) { amountCol = c; break; }
       }
       if (amountCol < 0) {
-        // fallback: find rightmost column containing an amount key
         for (let c = headers.length - 1; c >= 0; c--) {
-          if (amountKeys.some(k => headers[c].includes(k))) {
-            amountCol = c; break;
-          }
+          if (amountKeys.some(k => headers[c].includes(k))) { amountCol = c; break; }
         }
       }
 
       if (dateCol >= 0 && textCol >= 0 && amountCol >= 0) {
-        // Check for "bokført" column
-        const bookedCol = headers.findIndex((h: string) => h === "bokført" || h === "bokfort" || h === "bokført");
+        const bookedCol = headers.findIndex((h: string) => h === "bokført" || h === "bokfort");
         const mCol = headers.findIndex((h: string) => merchantKeys.some(k => h === k || h.includes(k)));
-        sections.push({ headerIdx: r, dateCols: dateCol, textCol, amountCol, merchantCol: mCol, bookedCol: bookedCol >= 0 ? bookedCol : -1 });
+        sections.push({
+          headerIdx: r,
+          dateCols: dateCol,
+          textCol,
+          amountCol,
+          merchantCol: mCol,
+          bookedCol: bookedCol >= 0 ? bookedCol : -1,
+          cardHolder: currentCardHolder,
+          isTotaltAndre: inTotaltAndre,
+        });
       }
     }
 
@@ -273,9 +316,16 @@ const bankNorwegianParser: FileParser = {
     console.log(`BN parser: found ${sections.length} section(s)`);
 
     const txns: ParsedTransaction[] = [];
+    const skipRowPatterns = /^(saldo|total|valutakurs|kjøp\/uttak)/i;
 
     for (let s = 0; s < sections.length; s++) {
       const sec = sections[s];
+      // Skip "Totalt andre hendelser" sections entirely
+      if (sec.isTotaltAndre) {
+        console.log(`BN parser: skipping "Totalt andre hendelser" section at row ${sec.headerIdx}`);
+        continue;
+      }
+
       const endRow = s + 1 < sections.length ? sections[s + 1].headerIdx : rows.length;
 
       for (let r = sec.headerIdx + 1; r < endRow; r++) {
@@ -288,11 +338,13 @@ const bankNorwegianParser: FileParser = {
 
         if (rawDate == null || rawText == null || rawAmount == null) continue;
 
-        // Skip summary/info rows (e.g. "Saldo hendelser", "Totalbeløp", "Valutakurs")
         const textStr = String(rawText).trim();
-        if (!textStr || /^(saldo|total|valutakurs)/i.test(textStr)) continue;
+        if (!textStr || skipRowPatterns.test(textStr)) continue;
 
-        // Parse date - Excel serial number or text
+        // Also check first cell for skip patterns
+        const firstCellStr = String(row[0] || "").trim();
+        if (skipRowPatterns.test(firstCellStr)) continue;
+
         let bookingDate: string;
         if (typeof rawDate === "number") {
           bookingDate = excelDateToISO(rawDate);
@@ -311,7 +363,6 @@ const bankNorwegianParser: FileParser = {
           } else continue;
         }
 
-        // Parse transaction date from "Bokført" column if available
         let transactionDate: string | undefined;
         if (sec.bookedCol >= 0 && row[sec.bookedCol] != null) {
           const rawBooked = row[sec.bookedCol];
@@ -319,8 +370,6 @@ const bankNorwegianParser: FileParser = {
             transactionDate = excelDateToISO(rawBooked);
           }
         }
-
-        const description = textStr;
 
         let amount: number;
         if (typeof rawAmount === "number") {
@@ -337,10 +386,11 @@ const bankNorwegianParser: FileParser = {
           transaction_date: transactionDate,
           amount,
           currency: "NOK",
-          description_raw: description,
+          description_raw: textStr,
           merchant,
-          category: categorize(description, bnRules),
+          category: categorize(textStr, bnRules),
           card_external_id: "banknorwegian",
+          card_holder: sec.cardHolder,
         });
       }
     }
