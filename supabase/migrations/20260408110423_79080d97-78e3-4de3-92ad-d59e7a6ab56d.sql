@@ -1,0 +1,1 @@
+ALTER TABLE public.transactions ADD COLUMN cost_type text NOT NULL DEFAULT 'V' CHECK (cost_type IN ('F', 'V'));
