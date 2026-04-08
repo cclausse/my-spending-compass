@@ -86,8 +86,8 @@ const amexRules: Rule[] = [
   { keys: ["forsikring", "gjensidige", "tryg", "fremtind", "storebrand"], category: "forsikring" },
 ];
 
-// Bank Norwegian uses amex rules as placeholder (same as client-side)
-const bnRules: Rule[] = amexRules;
+// SAS MC uses amex rules as placeholder
+const sasMCRules: Rule[] = amexRules;
 
 function categorize(description: string, rules: Rule[]): string {
   const d = description.toLowerCase();
@@ -206,7 +206,7 @@ const amexParser: FileParser = {
   },
 };
 
-// Card number to initials mapping for Bank Norwegian
+// Card number to initials mapping for SAS MC
 const CARD_HOLDER_MAP: Record<string, string> = {
   "5442": "CC",
   "7874": "ABC",
@@ -214,14 +214,13 @@ const CARD_HOLDER_MAP: Record<string, string> = {
 };
 
 function cardHolderFromSection(sectionHeader: string): string | undefined {
-  // Look for last 4 digits of card number pattern like ******5442
   const match = sectionHeader.match(/\*{4,}(\d{4})/);
   if (match) return CARD_HOLDER_MAP[match[1]];
   return undefined;
 }
 
-const bankNorwegianParser: FileParser = {
-  sourceType: "banknorwegian",
+const sasMCParser: FileParser = {
+  sourceType: "sasmc",
   canParse(_content: string | ArrayBuffer, fileName: string): boolean {
     const lower = fileName.toLowerCase();
     return lower.endsWith(".xlsx") || lower.endsWith(".xls");
