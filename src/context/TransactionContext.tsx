@@ -57,6 +57,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         category: (row.category || 'annet') as Category,
         source: (row.imports?.source_type || 'bank') as Transaction['source'],
         sourceLabel: SOURCE_LABELS[row.imports?.source_type || 'bank'] || row.imports?.source_type || 'Ukjent',
+        cardHolder: row.card_holder || undefined,
       }));
 
       setTransactions(mapped);
