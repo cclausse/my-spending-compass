@@ -224,80 +224,110 @@ const bankNorwegianParser: FileParser = {
 
     if (rows.length < 2) throw new Error("Tomt regneark");
 
-    // Find header row - look for a row containing date/amount-like headers
-    let headerIdx = -1;
-    const headerMap: Record<string, number> = {};
-    const dateKeys = ["transactiondate", "dato", "date", "bokføringsdato", "bookingdate"];
-    const textKeys = ["text", "beskrivelse", "description", "forklaring"];
-    const amountKeys = ["amount", "beløp", "belop", "sum"];
-    const merchantKeys = ["merchantcategory", "merchant", "kategori", "bransjekategori"];
+    // Find header rows - BN files have multiple sections with repeated headers
+    const dateKeys = ["dato", "date", "transactiondate", "bokføringsdato", "bookingdate"];
+    const textKeys = ["text", "beskrivelse", "description", "forklaring", "spesifikasjon"];
+    const amountKeys = ["beløp", "belop", "amount", "sum"];
+    const merchantKeys = ["merchantcategory", "merchant", "kategori", "bransjekategori", "sted"];
 
-    for (let r = 0; r < Math.min(rows.length, 10); r++) {
+    // Find ALL header rows and parse sections between them
+    interface Section { headerIdx: number; dateCols: number; textCol: number; amountCol: number; merchantCol: number; bookedCol: number; }
+    const sections: Section[] = [];
+
+    for (let r = 0; r < rows.length; r++) {
       const row = rows[r];
       if (!row || row.length < 3) continue;
       const headers = row.map((c: any) => String(c || "").toLowerCase().replace(/\s+/g, ""));
 
-      const dateCol = headers.findIndex((h: string) => dateKeys.some(k => h.includes(k)));
-      const textCol = headers.findIndex((h: string) => textKeys.some(k => h.includes(k)));
-      const amountCol = headers.findIndex((h: string) => amountKeys.some(k => h.includes(k)));
+      const dateCol = headers.findIndex((h: string) => dateKeys.some(k => h === k || h.includes(k)));
+      const textCol = headers.findIndex((h: string) => textKeys.some(k => h === k || h.includes(k)));
+      // For amount, prefer exact "beløp" over "utl.beløp" — use last matching column
+      let amountCol = -1;
+      for (let c = headers.length - 1; c >= 0; c--) {
+        if (amountKeys.some(k => headers[c] === k || headers[c] === k)) {
+          amountCol = c; break;
+        }
+      }
+      if (amountCol < 0) {
+        // fallback: find rightmost column containing an amount key
+        for (let c = headers.length - 1; c >= 0; c--) {
+          if (amountKeys.some(k => headers[c].includes(k))) {
+            amountCol = c; break;
+          }
+        }
+      }
 
       if (dateCol >= 0 && textCol >= 0 && amountCol >= 0) {
-        headerIdx = r;
-        headerMap["date"] = dateCol;
-        headerMap["text"] = textCol;
-        headerMap["amount"] = amountCol;
-        const mCol = headers.findIndex((h: string) => merchantKeys.some(k => h.includes(k)));
-        if (mCol >= 0) headerMap["merchant"] = mCol;
-        break;
+        // Check for "bokført" column
+        const bookedCol = headers.findIndex((h: string) => h === "bokført" || h === "bokfort" || h === "bokført");
+        const mCol = headers.findIndex((h: string) => merchantKeys.some(k => h === k || h.includes(k)));
+        sections.push({ headerIdx: r, dateCols: dateCol, textCol, amountCol, merchantCol: mCol, bookedCol: bookedCol >= 0 ? bookedCol : -1 });
       }
     }
 
-    if (headerIdx < 0) {
-      throw new Error("Kunne ikke finne header-rad i Excel-filen. Forventede kolonner: dato, beskrivelse, beløp.");
+    if (sections.length === 0) {
+      throw new Error("Kunne ikke finne header-rad i Excel-filen. Forventede kolonner: dato, spesifikasjon/beskrivelse, beløp.");
     }
 
-    console.log(`BN parser: header at row ${headerIdx}, columns: date=${headerMap["date"]}, text=${headerMap["text"]}, amount=${headerMap["amount"]}, merchant=${headerMap["merchant"] ?? "none"}`);
+    console.log(`BN parser: found ${sections.length} section(s)`);
 
     const txns: ParsedTransaction[] = [];
-    for (let r = headerIdx + 1; r < rows.length; r++) {
-      const row = rows[r];
-      if (!row || row.length < 3) continue;
 
-      const rawDate = row[headerMap["date"]];
-      const rawText = row[headerMap["text"]];
-      const rawAmount = row[headerMap["amount"]];
+    for (let s = 0; s < sections.length; s++) {
+      const sec = sections[s];
+      const endRow = s + 1 < sections.length ? sections[s + 1].headerIdx : rows.length;
 
-      if (rawDate == null || rawText == null || rawAmount == null) continue;
+      for (let r = sec.headerIdx + 1; r < endRow; r++) {
+        const row = rows[r];
+        if (!row || row.length < 3) continue;
 
-      // Parse date - could be Excel serial number, M/DD/YY, or DD.MM.YYYY
-      let bookingDate: string;
-      if (typeof rawDate === "number") {
-        bookingDate = excelDateToISO(rawDate);
-      } else {
-        const dateStr = String(rawDate).trim();
-        if (dateStr.includes("/")) {
-          const parts = dateStr.split("/");
-          if (parts.length === 3) {
-            let [m, d, y] = parts.map(Number);
-            if (y < 100) y += 2000;
+        const rawDate = row[sec.dateCols];
+        const rawText = row[sec.textCol];
+        const rawAmount = row[sec.amountCol];
+
+        if (rawDate == null || rawText == null || rawAmount == null) continue;
+
+        // Skip summary/info rows (e.g. "Saldo hendelser", "Totalbeløp", "Valutakurs")
+        const textStr = String(rawText).trim();
+        if (!textStr || /^(saldo|total|valutakurs)/i.test(textStr)) continue;
+
+        // Parse date - Excel serial number or text
+        let bookingDate: string;
+        if (typeof rawDate === "number") {
+          bookingDate = excelDateToISO(rawDate);
+        } else {
+          const dateStr = String(rawDate).trim();
+          if (dateStr.includes("/")) {
+            const parts = dateStr.split("/");
+            if (parts.length === 3) {
+              let [m, d, y] = parts.map(Number);
+              if (y < 100) y += 2000;
+              bookingDate = toISODate(d, m, y);
+            } else continue;
+          } else if (dateStr.includes(".")) {
+            const [d, m, y] = dateStr.split(".").map(Number);
             bookingDate = toISODate(d, m, y);
           } else continue;
-        } else if (dateStr.includes(".")) {
-          const [d, m, y] = dateStr.split(".").map(Number);
-          bookingDate = toISODate(d, m, y);
-        } else continue;
-      }
+        }
 
-      const description = String(rawText).trim();
-      if (!description) continue;
+        // Parse transaction date from "Bokført" column if available
+        let transactionDate: string | undefined;
+        if (sec.bookedCol >= 0 && row[sec.bookedCol] != null) {
+          const rawBooked = row[sec.bookedCol];
+          if (typeof rawBooked === "number") {
+            transactionDate = excelDateToISO(rawBooked);
+          }
+        }
 
-      let amount: number;
-      if (typeof rawAmount === "number") {
-        amount = rawAmount;
-      } else {
-        amount = parseNorwegianNumber(String(rawAmount));
-      }
-      if (isNaN(amount) || amount === 0) continue;
+        const description = textStr;
+
+        let amount: number;
+        if (typeof rawAmount === "number") {
+          amount = rawAmount;
+        } else {
+          amount = parseNorwegianNumber(String(rawAmount));
+        }
+        if (isNaN(amount) || amount === 0) continue;
 
       // BN: negative amounts are expenses, positive are payments/credits
       // Normalize: expenses should be negative
