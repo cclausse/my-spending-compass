@@ -14,7 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      imports: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          s3_key: string
+          source_type: Database["public"]["Enums"]["source_type"] | null
+          status: Database["public"]["Enums"]["import_status"]
+          transaction_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          s3_key: string
+          source_type?: Database["public"]["Enums"]["source_type"] | null
+          status?: Database["public"]["Enums"]["import_status"]
+          transaction_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          s3_key?: string
+          source_type?: Database["public"]["Enums"]["source_type"] | null
+          status?: Database["public"]["Enums"]["import_status"]
+          transaction_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          account_external_id: string | null
+          amount: number
+          booking_date: string
+          card_external_id: string | null
+          category: string
+          created_at: string
+          currency: string
+          dedup_hash: string
+          description_raw: string
+          id: string
+          import_id: string
+          merchant: string | null
+          transaction_date: string | null
+          user_id: string
+        }
+        Insert: {
+          account_external_id?: string | null
+          amount: number
+          booking_date: string
+          card_external_id?: string | null
+          category?: string
+          created_at?: string
+          currency?: string
+          dedup_hash: string
+          description_raw: string
+          id?: string
+          import_id: string
+          merchant?: string | null
+          transaction_date?: string | null
+          user_id: string
+        }
+        Update: {
+          account_external_id?: string | null
+          amount?: number
+          booking_date?: string
+          card_external_id?: string | null
+          category?: string
+          created_at?: string
+          currency?: string
+          dedup_hash?: string
+          description_raw?: string
+          id?: string
+          import_id?: string
+          merchant?: string | null
+          transaction_date?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +126,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      import_status: "uploaded" | "processing" | "parsed" | "failed"
+      source_type: "bank" | "amex" | "sasmc" | "banknorwegian"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +254,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      import_status: ["uploaded", "processing", "parsed", "failed"],
+      source_type: ["bank", "amex", "sasmc", "banknorwegian"],
+    },
   },
 } as const
