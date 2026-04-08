@@ -1,4 +1,4 @@
-import { Category, TransactionSource } from "@/types/transaction";
+import { Category, CostType, TransactionSource } from "@/types/transaction";
 
 type Rule = { keys: string[]; category: Category };
 
