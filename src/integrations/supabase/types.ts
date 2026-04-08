@@ -65,6 +65,7 @@ export type Database = {
           amount: number
           booking_date: string
           card_external_id: string | null
+          card_holder: string | null
           category: string
           created_at: string
           currency: string
@@ -81,6 +82,7 @@ export type Database = {
           amount: number
           booking_date: string
           card_external_id?: string | null
+          card_holder?: string | null
           category?: string
           created_at?: string
           currency?: string
@@ -97,6 +99,7 @@ export type Database = {
           amount?: number
           booking_date?: string
           card_external_id?: string | null
+          card_holder?: string | null
           category?: string
           created_at?: string
           currency?: string
