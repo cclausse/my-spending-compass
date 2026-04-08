@@ -124,5 +124,6 @@ export interface Transaction {
   category: Category;
   source: TransactionSource;
   sourceLabel: string;
+  cardHolder?: string;
   rawData?: Record<string, string>;
 }
