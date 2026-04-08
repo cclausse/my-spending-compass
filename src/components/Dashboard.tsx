@@ -43,6 +43,7 @@ export function Dashboard() {
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
+  const initialized = useRef(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
