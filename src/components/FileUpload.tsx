@@ -53,7 +53,7 @@ export function FileUpload({ onTransactions }: { onTransactions?: (txns: any[]) 
     if (total > 0) {
       toast({ title: `${total} transaksjoner importert`, description: `Fra ${fileResults.filter(r => r.status === 'success').length} fil(er)` });
     }
-  }, [processFile, toast, storeFiles]);
+  }, [processFile, toast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
