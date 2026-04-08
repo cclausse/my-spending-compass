@@ -206,3 +206,46 @@ function matchRules(description: string, rules: Rule[]): Category {
 export function categorize(description: string, source: TransactionSource = "bank"): Category {
   return matchRules(description, rulesBySource[source]);
 }
+
+// --- Fixed cost keywords (case-insensitive partial match) ---
+const fixedCostKeys: string[] = [
+  "lyse tele",
+  "huseiernes",
+  "verisure",
+  "alarmabonnement",
+  "forsikring",
+  "fremtind",
+  "storebrand",
+  "gjensidige",
+  "tensio",
+  "tibber",
+  "telenor",
+  "neas",
+  "vitnett",
+  "lån",
+  "statens pensjon",
+  "trondheim komm",
+  "oppdal kommune",
+  "kommunale",
+  "remidt",
+  "trh kommune",
+  "samfunnsviterne",
+  "nito",
+  "spotify",
+  "netflix",
+  "icloud",
+  "tv2",
+  "tv 2",
+  "disney",
+  "strim",
+  "prime",
+  "zwift",
+  "trainerroad",
+  "3t ",
+];
+
+export function determineCostType(description: string): CostType {
+  const d = description.toLowerCase();
+  return fixedCostKeys.some((k) => d.includes(k)) ? "F" : "V";
+}
+
