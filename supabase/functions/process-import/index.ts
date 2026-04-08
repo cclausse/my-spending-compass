@@ -312,7 +312,7 @@ const sasMCParser: FileParser = {
       throw new Error("Kunne ikke finne header-rad i Excel-filen. Forventede kolonner: dato, spesifikasjon/beskrivelse, beløp.");
     }
 
-    console.log(`BN parser: found ${sections.length} section(s)`);
+    console.log(`SAS MC parser: found ${sections.length} section(s)`);
 
     const txns: ParsedTransaction[] = [];
     const skipRowPatterns = /^(saldo|total|valutakurs|kjøp\/uttak)/i;
@@ -321,7 +321,7 @@ const sasMCParser: FileParser = {
       const sec = sections[s];
       // Skip "Totalt andre hendelser" sections entirely
       if (sec.isTotaltAndre) {
-        console.log(`BN parser: skipping "Totalt andre hendelser" section at row ${sec.headerIdx}`);
+        console.log(`SAS MC parser: skipping "Totalt andre hendelser" section at row ${sec.headerIdx}`);
         continue;
       }
 
@@ -387,14 +387,14 @@ const sasMCParser: FileParser = {
           currency: "NOK",
           description_raw: textStr,
           merchant,
-          category: categorize(textStr, bnRules),
-          card_external_id: "banknorwegian",
+          category: categorize(textStr, sasMCRules),
+          card_external_id: "sasmc",
           card_holder: sec.cardHolder,
         });
       }
     }
 
-    console.log(`BN parser: parsed ${txns.length} transactions`);
+    console.log(`SAS MC parser: parsed ${txns.length} transactions`);
     return txns;
   },
 };
@@ -514,7 +514,7 @@ Deno.serve(async (req) => {
 
     if (isExcel) {
       fileContent = await fileResponse.arrayBuffer();
-      matchedParser = bankNorwegianParser;
+      matchedParser = sasMCParser;
     } else {
       fileContent = await fileResponse.text();
       for (const p of csvParsers) {
