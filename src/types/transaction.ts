@@ -116,6 +116,13 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   annet: 'hsl(0, 0%, 55%)',
 };
 
+export type CostType = 'F' | 'V';
+
+export const COST_TYPE_LABELS: Record<CostType, string> = {
+  F: 'Fast',
+  V: 'Variabel',
+};
+
 export interface Transaction {
   id: string;
   date: Date;
@@ -125,5 +132,6 @@ export interface Transaction {
   source: TransactionSource;
   sourceLabel: string;
   cardHolder?: string;
+  costType: CostType;
   rawData?: Record<string, string>;
 }
