@@ -69,7 +69,7 @@ export function parseBankCSV(content: string): Transaction[] {
       category: categorize(beskrivelse, 'bank'),
       source: 'bank',
       sourceLabel: 'Regningskonto',
-    });
+      costType: 'V',
   }
 
   return transactions;
@@ -108,7 +108,7 @@ export function parseAmexCSV(content: string): Transaction[] {
       category: categorize(beskrivelse, 'amex'),
       source: 'amex',
       sourceLabel: 'AMEX',
-    });
+      costType: 'V',
   }
 
   return transactions;
