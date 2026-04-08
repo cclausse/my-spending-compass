@@ -17,6 +17,7 @@ interface ParsedTransaction {
   description_raw: string;
   merchant?: string;
   category: string;
+  cost_type?: string;
   account_external_id?: string;
   card_external_id?: string;
   card_holder?: string;
@@ -599,6 +600,7 @@ Deno.serve(async (req) => {
         description_raw: t.description_raw,
         merchant: t.merchant || null,
         category: t.category,
+        cost_type: t.cost_type || determineCostType(t.description_raw),
         account_external_id: t.account_external_id || null,
         card_external_id: t.card_external_id || null,
         card_holder: t.card_holder || null,
