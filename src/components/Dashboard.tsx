@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransactions } from '@/context/TransactionContext';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Category } from '@/types/transaction';
@@ -43,6 +43,7 @@ export function Dashboard() {
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
+  const initialized = useRef(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -69,6 +70,16 @@ export function Dashboard() {
     return Array.from(set).sort();
   }, [transactions]);
 
+  // Initialize all filters to "all selected" on first data load
+  useEffect(() => {
+    if (transactions.length > 0 && !initialized.current) {
+      initialized.current = true;
+      setMonthFilter(new Set(allMonths));
+      setSourceFilter(new Set(allSources));
+      // Categories and descriptions will be set after cascade below
+    }
+  }, [transactions, allMonths, allSources]);
+
   // Step 1: filter by period + source
   const afterPeriodAndSource = useMemo(() => {
     let result = transactions;
@@ -84,9 +95,16 @@ export function Dashboard() {
     return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
   }, [afterPeriodAndSource]);
 
+  // Auto-select all categories when available categories change and filter is empty
+  useEffect(() => {
+    if (availableCategories.length > 0 && categoryFilter.size === 0) {
+      setCategoryFilter(new Set(availableCategories));
+    }
+  }, [availableCategories]);
+
   // Step 2: filter by category
   const afterCategory = useMemo(() => {
-    if (categoryFilter.size === 0) return [];
+    if (categoryFilter.size === 0) return afterPeriodAndSource;
     return afterPeriodAndSource.filter(t => categoryFilter.has(t.category));
   }, [afterPeriodAndSource, categoryFilter]);
 
@@ -99,11 +117,10 @@ export function Dashboard() {
 
   // Step 3: final filtered result
   const filtered = useMemo(() => {
-    if (categoryFilter.size === 0) return [];
     let result = afterCategory;
     if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
     return result;
-  }, [afterCategory, categoryFilter, descriptionFilter]);
+  }, [afterCategory, descriptionFilter]);
 
   // Clean up stale selections when available options change
   // (category filter can only contain available categories)
