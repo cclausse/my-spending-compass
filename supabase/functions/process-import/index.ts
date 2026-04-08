@@ -86,8 +86,8 @@ const amexRules: Rule[] = [
   { keys: ["forsikring", "gjensidige", "tryg", "fremtind", "storebrand"], category: "forsikring" },
 ];
 
-// Bank Norwegian uses amex rules as placeholder (same as client-side)
-const bnRules: Rule[] = amexRules;
+// SAS MC uses amex rules as placeholder
+const sasMCRules: Rule[] = amexRules;
 
 function categorize(description: string, rules: Rule[]): string {
   const d = description.toLowerCase();
@@ -206,7 +206,7 @@ const amexParser: FileParser = {
   },
 };
 
-// Card number to initials mapping for Bank Norwegian
+// Card number to initials mapping for SAS MC
 const CARD_HOLDER_MAP: Record<string, string> = {
   "5442": "CC",
   "7874": "ABC",
@@ -214,14 +214,13 @@ const CARD_HOLDER_MAP: Record<string, string> = {
 };
 
 function cardHolderFromSection(sectionHeader: string): string | undefined {
-  // Look for last 4 digits of card number pattern like ******5442
   const match = sectionHeader.match(/\*{4,}(\d{4})/);
   if (match) return CARD_HOLDER_MAP[match[1]];
   return undefined;
 }
 
-const bankNorwegianParser: FileParser = {
-  sourceType: "banknorwegian",
+const sasMCParser: FileParser = {
+  sourceType: "sasmc",
   canParse(_content: string | ArrayBuffer, fileName: string): boolean {
     const lower = fileName.toLowerCase();
     return lower.endsWith(".xlsx") || lower.endsWith(".xls");
@@ -313,7 +312,7 @@ const bankNorwegianParser: FileParser = {
       throw new Error("Kunne ikke finne header-rad i Excel-filen. Forventede kolonner: dato, spesifikasjon/beskrivelse, beløp.");
     }
 
-    console.log(`BN parser: found ${sections.length} section(s)`);
+    console.log(`SAS MC parser: found ${sections.length} section(s)`);
 
     const txns: ParsedTransaction[] = [];
     const skipRowPatterns = /^(saldo|total|valutakurs|kjøp\/uttak)/i;
@@ -322,7 +321,7 @@ const bankNorwegianParser: FileParser = {
       const sec = sections[s];
       // Skip "Totalt andre hendelser" sections entirely
       if (sec.isTotaltAndre) {
-        console.log(`BN parser: skipping "Totalt andre hendelser" section at row ${sec.headerIdx}`);
+        console.log(`SAS MC parser: skipping "Totalt andre hendelser" section at row ${sec.headerIdx}`);
         continue;
       }
 
@@ -388,14 +387,14 @@ const bankNorwegianParser: FileParser = {
           currency: "NOK",
           description_raw: textStr,
           merchant,
-          category: categorize(textStr, bnRules),
-          card_external_id: "banknorwegian",
+          category: categorize(textStr, sasMCRules),
+          card_external_id: "sasmc",
           card_holder: sec.cardHolder,
         });
       }
     }
 
-    console.log(`BN parser: parsed ${txns.length} transactions`);
+    console.log(`SAS MC parser: parsed ${txns.length} transactions`);
     return txns;
   },
 };
@@ -515,7 +514,7 @@ Deno.serve(async (req) => {
 
     if (isExcel) {
       fileContent = await fileResponse.arrayBuffer();
-      matchedParser = bankNorwegianParser;
+      matchedParser = sasMCParser;
     } else {
       fileContent = await fileResponse.text();
       for (const p of csvParsers) {

@@ -4,6 +4,7 @@ import { useTransactions } from '@/context/TransactionContext';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Category } from '@/types/transaction';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User } from 'lucide-react';
@@ -36,7 +37,7 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
 }
 
 export function Dashboard() {
-  const { transactions, loading, refreshTransactions } = useTransactions();
+  const { transactions, loading, refreshTransactions, updateCategory } = useTransactions();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
@@ -419,11 +420,34 @@ export function Dashboard() {
                   <tr key={t.id} className="border-b border-border/50 hover:bg-muted/50">
                     <td className="py-2 text-muted-foreground">{format(t.date, 'dd.MM.yy')}</td>
                     <td className="py-2 max-w-48 truncate">{t.description}</td>
-                    <td className="py-2">
-                      <span className="inline-flex items-center gap-1.5 text-xs">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[t.category] }} />
-                        {CATEGORY_LABELS[t.category]}
-                      </span>
+                    <td className="py-1">
+                      <Select
+                        value={t.category}
+                        onValueChange={async (val) => {
+                          try {
+                            await updateCategory(t.id, val as Category);
+                          } catch {
+                            toast({ title: 'Feil', description: 'Kunne ikke oppdatere kategori', variant: 'destructive' });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-7 w-auto min-w-[120px] border-0 bg-transparent px-1 text-xs shadow-none hover:bg-muted">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[t.category] }} />
+                            <SelectValue />
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {Object.entries(CATEGORY_LABELS).sort(([,a],[,b]) => a.localeCompare(b)).map(([key, label]) => (
+                            <SelectItem key={key} value={key} className="text-xs">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[key as Category] }} />
+                                {label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="py-2 text-muted-foreground text-xs">{t.sourceLabel}</td>
                     <td className="py-2 text-xs font-medium">{t.cardHolder || '–'}</td>

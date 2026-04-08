@@ -7,6 +7,7 @@ interface TransactionState {
   loading: boolean;
   refreshTransactions: () => Promise<void>;
   clearTransactions: () => void;
+  updateCategory: (transactionId: string, category: Category) => Promise<void>;
 }
 
 const TransactionContext = createContext<TransactionState | null>(null);
@@ -74,8 +75,19 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
 
   const clearTransactions = useCallback(() => setTransactions([]), []);
 
+  const updateCategory = useCallback(async (transactionId: string, category: Category) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update({ category })
+      .eq('id', transactionId);
+    if (error) throw error;
+    setTransactions(prev =>
+      prev.map(t => t.id === transactionId ? { ...t, category } : t)
+    );
+  }, []);
+
   return (
-    <TransactionContext.Provider value={{ transactions, loading, refreshTransactions: fetchTransactions, clearTransactions }}>
+    <TransactionContext.Provider value={{ transactions, loading, refreshTransactions: fetchTransactions, clearTransactions, updateCategory }}>
       {children}
     </TransactionContext.Provider>
   );
