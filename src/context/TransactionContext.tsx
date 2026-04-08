@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { Transaction, Category } from '@/types/transaction';
+import { Transaction, Category, CostType } from '@/types/transaction';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TransactionState {
@@ -8,6 +8,7 @@ interface TransactionState {
   refreshTransactions: () => Promise<void>;
   clearTransactions: () => void;
   updateCategory: (transactionId: string, category: Category) => Promise<number>;
+  updateCostType: (transactionId: string, costType: CostType) => Promise<number>;
 }
 
 const TransactionContext = createContext<TransactionState | null>(null);
@@ -19,8 +20,6 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch all transactions for the logged-in user (RLS handles filtering)
-      // Supabase default limit is 1000, paginate if needed
       let allRows: any[] = [];
       let from = 0;
       const pageSize = 1000;
@@ -59,6 +58,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         source: (row.imports?.source_type || 'bank') as Transaction['source'],
         sourceLabel: SOURCE_LABELS[row.imports?.source_type || 'bank'] || row.imports?.source_type || 'Ukjent',
         cardHolder: row.card_holder || undefined,
+        costType: (row.cost_type || 'V') as CostType,
       }));
 
       setTransactions(mapped);
@@ -76,31 +76,47 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   const clearTransactions = useCallback(() => setTransactions([]), []);
 
   const updateCategory = useCallback(async (transactionId: string, category: Category) => {
-    // Find the transaction to get its description
     const target = transactions.find(t => t.id === transactionId);
     if (!target) throw new Error('Transaction not found');
 
     const description = target.description;
 
-    // Update ALL transactions with the same description
     const { error } = await supabase
       .from('transactions')
       .update({ category })
       .eq('description_raw', description);
     if (error) throw error;
 
-    // Update local state for all matching transactions
     setTransactions(prev =>
       prev.map(t => t.description === description ? { ...t, category } : t)
     );
 
-    // Return count for toast feedback
+    const matchCount = transactions.filter(t => t.description === description).length;
+    return matchCount;
+  }, [transactions]);
+
+  const updateCostType = useCallback(async (transactionId: string, costType: CostType) => {
+    const target = transactions.find(t => t.id === transactionId);
+    if (!target) throw new Error('Transaction not found');
+
+    const description = target.description;
+
+    const { error } = await supabase
+      .from('transactions')
+      .update({ cost_type: costType } as any)
+      .eq('description_raw', description);
+    if (error) throw error;
+
+    setTransactions(prev =>
+      prev.map(t => t.description === description ? { ...t, costType } : t)
+    );
+
     const matchCount = transactions.filter(t => t.description === description).length;
     return matchCount;
   }, [transactions]);
 
   return (
-    <TransactionContext.Provider value={{ transactions, loading, refreshTransactions: fetchTransactions, clearTransactions, updateCategory }}>
+    <TransactionContext.Provider value={{ transactions, loading, refreshTransactions: fetchTransactions, clearTransactions, updateCategory, updateCostType }}>
       {children}
     </TransactionContext.Provider>
   );

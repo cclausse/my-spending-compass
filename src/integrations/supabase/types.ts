@@ -67,6 +67,7 @@ export type Database = {
           card_external_id: string | null
           card_holder: string | null
           category: string
+          cost_type: string
           created_at: string
           currency: string
           dedup_hash: string
@@ -84,6 +85,7 @@ export type Database = {
           card_external_id?: string | null
           card_holder?: string | null
           category?: string
+          cost_type?: string
           created_at?: string
           currency?: string
           dedup_hash: string
@@ -101,6 +103,7 @@ export type Database = {
           card_external_id?: string | null
           card_holder?: string | null
           category?: string
+          cost_type?: string
           created_at?: string
           currency?: string
           dedup_hash?: string

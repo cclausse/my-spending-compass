@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransactions } from '@/context/TransactionContext';
-import { CATEGORY_LABELS, CATEGORY_COLORS, Category } from '@/types/transaction';
+import { CATEGORY_LABELS, CATEGORY_COLORS, Category, CostType, COST_TYPE_LABELS } from '@/types/transaction';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -37,7 +37,7 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
 }
 
 export function Dashboard() {
-  const { transactions, loading, refreshTransactions, updateCategory } = useTransactions();
+  const { transactions, loading, refreshTransactions, updateCategory, updateCostType } = useTransactions();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
@@ -45,6 +45,7 @@ export function Dashboard() {
   const [cardHolderFilter, setCardHolderFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
+  const [costTypeFilter, setCostTypeFilter] = useState<Set<CostType>>(new Set(['F', 'V']));
   const initialized = useRef(false);
 
   const handleRefresh = async () => {
@@ -128,8 +129,9 @@ export function Dashboard() {
   const filtered = useMemo(() => {
     let result = afterCategory;
     if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
+    if (costTypeFilter.size > 0 && costTypeFilter.size < 2) result = result.filter(t => costTypeFilter.has(t.costType));
     return result;
-  }, [afterCategory, descriptionFilter]);
+  }, [afterCategory, descriptionFilter, costTypeFilter]);
 
   // Clean up stale selections when available options change
   // (category filter can only contain available categories)
@@ -324,6 +326,30 @@ export function Dashboard() {
             </PopoverContent>
           </Popover>
         )}
+        {/* Cost type filter */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-40 justify-start gap-2">
+              <Lock className="h-4 w-4" />
+              {costTypeFilter.size === 2 ? 'F+V' : costTypeFilter.size === 0 ? 'Ingen' : [...costTypeFilter].map(c => COST_TYPE_LABELS[c]).join(', ')}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-3" align="start">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set(['F', 'V']))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set())}>Nullstill</button>
+              </div>
+              {(['F', 'V'] as CostType[]).map(ct => (
+                <label key={ct} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox checked={costTypeFilter.has(ct)} onCheckedChange={() => setCostTypeFilter(prev => toggleInSet(prev, ct))} />
+                  {COST_TYPE_LABELS[ct]}
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <div className="ml-auto">
           <Button
             variant="outline"
@@ -411,8 +437,9 @@ export function Dashboard() {
                    <th className="pb-2 font-medium">Beskrivelse</th>
                    <th className="pb-2 font-medium">Kategori</th>
                    <th className="pb-2 font-medium">Kilde</th>
-                   <th className="pb-2 font-medium">Bruker</th>
-                   <th className="pb-2 font-medium text-right">Beløp</th>
+                    <th className="pb-2 font-medium">Bruker</th>
+                    <th className="pb-2 font-medium">Type</th>
+                    <th className="pb-2 font-medium text-right">Beløp</th>
                  </tr>
               </thead>
               <tbody>
@@ -452,6 +479,23 @@ export function Dashboard() {
                     </td>
                     <td className="py-2 text-muted-foreground text-xs">{t.sourceLabel}</td>
                     <td className="py-2 text-xs font-medium">{t.cardHolder || '–'}</td>
+                    <td className="py-1">
+                      <button
+                        className={`text-xs font-bold px-2 py-0.5 rounded cursor-pointer ${t.costType === 'F' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}
+                        onClick={async () => {
+                          const newType: CostType = t.costType === 'F' ? 'V' : 'F';
+                          try {
+                            const count = await updateCostType(t.id, newType);
+                            toast({ title: 'Type oppdatert', description: `${count} transaksjon${count > 1 ? 'er' : ''} med «${t.description}» satt til ${COST_TYPE_LABELS[newType]}` });
+                          } catch {
+                            toast({ title: 'Feil', description: 'Kunne ikke oppdatere type', variant: 'destructive' });
+                          }
+                        }}
+                        title={`Klikk for å endre til ${t.costType === 'F' ? 'Variabel' : 'Fast'}`}
+                      >
+                        {t.costType}
+                      </button>
+                    </td>
                     <td className={`py-2 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
                       {formatNOK(t.amount)}
                     </td>
