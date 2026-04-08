@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import * as XLSX from "https://esm.sh/xlsx@0.18.5";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -20,8 +22,8 @@ interface ParsedTransaction {
 }
 
 interface FileParser {
-  canParse(content: string, fileName: string): boolean;
-  parse(content: string): ParsedTransaction[];
+  canParse(content: string | ArrayBuffer, fileName: string): boolean;
+  parse(content: string | ArrayBuffer): ParsedTransaction[];
   sourceType: string;
 }
 
@@ -31,7 +33,7 @@ type Rule = { keys: string[]; category: string };
 const bankRules: Rule[] = [
   { keys: ["hyre", "tesla"], category: "bil" },
   { keys: ["flyt", "apcoa", "bom", "vegamot"], category: "bom_parkering" },
-  { keys: ["huseiernes", "verisure", "alarmabonnement", "trondheim komm", "oppdal kommune", "kommunale", "vekst oppdal", "remidt", "trh kommune"], category: "bolig_hytte" },
+  { keys: ["huseiernes", "verisure", "alarmabonnement", "trondheim komm", "oppdal kommune", "kommunale", "vekst oppdal", "remidt", "trh kommune", "1885 16 89423 ved"], category: "bolig_hytte" },
   { keys: ["tobb/bbl finans", "norsk medisinaldepot"], category: "berge_sr" },
   { keys: ["samfunnsviterne", "nito", "leeds"], category: "lag_foreninger" },
   { keys: ["gisle aasgaard", "brage andreas", "egil haave", "ingrid rongved skui", "thea kraugerud tønder", "sverre lo", "marit herrem", "kåre kolve"], category: "eksterne_overforinger" },
@@ -41,7 +43,7 @@ const bankRules: Rule[] = [
   { keys: ["dronningens tenner", "apotek", "boots", "legen", "tannlege", "melin collectors", "tannklinikk"], category: "helse" },
   { keys: ["lån", "statens pensjon"], category: "laan" },
   { keys: ["lyse tele"], category: "mobil" },
-  { keys: ["credicare", "collectia", "payex"], category: "ikke_bestemt" },
+  { keys: ["credicare", "collectia", "payex", "4212 58 85130 fakturanummer 716"], category: "ikke_bestemt" },
   { keys: ["claussen", "berge", "regninger"], category: "interne_overforinger" },
   { keys: ["ref: 20129268", "refund", "reversal", "payment received", "credit", "tilbakeføring", "takk"], category: "innbetaling" },
   { keys: ["american express", "santander", "sparebank 1 kreditt", "seb kort", "kredittbanken"], category: "kredittkort" },
@@ -49,7 +51,7 @@ const bankRules: Rule[] = [
   { keys: ["ticketmaster"], category: "konserter" },
   { keys: ["feriekonto sbanken", "sbanken - et konsept fra dnb"], category: "per" },
   { keys: ["polet"], category: "polet" },
-  { keys: ["tilburg", "trainline", "hotel", "airbnb", "booking", "sas", "norwegian", "duty-free"], category: "reise" },
+  { keys: ["tilburg", "trainline", "relay 373522 nice", "chez pipo", "antibes", "hotel", "airbnb", "booking", "sas", "norwegian", "juan les pins", "duty-free", "a316"], category: "reise" },
   { keys: ["dott", "ryde"], category: "sparkesykkel" },
   { keys: ["tensio", "tibber", "gardåveien", "landstads vei"], category: "strom" },
   { keys: ["impulse", "sport", "medlem", "vertical playground"], category: "sport_fritid" },
@@ -61,18 +63,18 @@ const bankRules: Rule[] = [
 
 const amexRules: Rule[] = [
   { keys: ["extra", "joker", "rema", "kiwi", "coop", "bunnpris", "spar", "meny", "obs city lade", "city syd"], category: "dagligvarer" },
-  { keys: ["pizza", "det sorte faar", "fox grill", "restaurant", "nandos", "cafe", "espresso", "feniqia", "amundsen bryggeri", "grilleriet"], category: "restaurant" },
+  { keys: ["8446-v2", "pizza", "det sorte faar", "fox grill", "arsenal footbal", "hard rock", "cafe", "espresso", "restaurant", "nandos", "wildwood kitchen", "feniqia", "amundsen bryggeri", "grilleriet"], category: "restaurant" },
   { keys: ["tfl travel", "vy", "ruter", "uber", "bolt", "bensin", "circle k", "shell", "entur web", "atb app"], category: "transport" },
-  { keys: ["tilburg", "trainline", "hotel", "airbnb", "booking", "sas", "norwegian", "duty-free", "klm"], category: "reise" },
-  { keys: ["telenor", "apple", "aws", "disney", "strim", "prime", "spotify", "netflix", "icloud", "tv2", "tv 2"], category: "tv_media" },
+  { keys: ["tilburg", "trainline", "relay 373522 nice", "chez pipo", "antibes", "hotel", "airbnb", "booking", "sas", "norwegian", "juan les pins", "duty-free", "a316", "klm"], category: "reise" },
+  { keys: ["resumaker", "telenor", "ark valentinlyst", "apple", "aws", "disney", "strim", "prime", "spotify", "netflix", "icloud", "tv2", "tv 2"], category: "tv_media" },
   { keys: ["zwift", "spond", "trainerroad"], category: "trening" },
   { keys: ["lyse tele"], category: "mobil" },
   { keys: ["hamleys", "elkjop", "power", "komplett", "elektroimportoeren"], category: "elektronikk" },
-  { keys: ["apotek", "boots", "legen", "tannlege", "tannklinikk"], category: "helse" },
-  { keys: ["retro", "carma", "xxl", "nike", "adidas", "zalando", "hm", "h&m", "cubus", "lillywhites", "mango london"], category: "klaer" },
+  { keys: ["apotek", "boots", "legen", "tannlege", "vita2700trondheimt", "tannklinikk"], category: "helse" },
+  { keys: ["retro", "carma", "classic footbal", "xxl", "nike", "adidas", "zalando", "hm", "h&m", "cubus", "lillywhites", "mango london"], category: "klaer" },
   { keys: ["voi", "dott", "ryde"], category: "sparkesykkel" },
   { keys: ["trd olearys", "bakeri", "dromedar", "sprø", "snurr"], category: "kafe" },
-  { keys: ["bill kill as=trondheim", "ikea", "felleskjoepet", "clas ohlson", "biltema", "bygg"], category: "hus_hjem" },
+  { keys: ["bill kill as=trondheim", "ikea", "felleskjoepet", "clas ohlson", "biltema", "bygg", "gjenvinningsstasjon"], category: "hus_hjem" },
   { keys: ["hyre", "tesla"], category: "bil" },
   { keys: ["espos", "kahoot", "openai", "chatgpt", "pluralsight"], category: "jobb" },
   { keys: ["refund", "reversal", "payment received", "credit", "tilbakeføring", "takk"], category: "innbetaling" },
@@ -82,6 +84,9 @@ const amexRules: Rule[] = [
   { keys: ["fee", "gebyr", "rente"], category: "gebyrer" },
   { keys: ["forsikring", "gjensidige", "tryg", "fremtind", "storebrand"], category: "forsikring" },
 ];
+
+// Bank Norwegian uses amex rules as placeholder (same as client-side)
+const bnRules: Rule[] = amexRules;
 
 function categorize(description: string, rules: Rule[]): string {
   const d = description.toLowerCase();
@@ -118,15 +123,23 @@ function toISODate(d: number, m: number, y: number): string {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
+function excelDateToISO(serial: number): string {
+  const utcDays = Math.floor(serial - 25569);
+  const date = new Date(utcDays * 86400 * 1000);
+  return date.toISOString().slice(0, 10);
+}
+
 // ---- Parsers ----
 const bankParser: FileParser = {
   sourceType: "bank",
-  canParse(content: string, _fileName: string): boolean {
+  canParse(content: string | ArrayBuffer, _fileName: string): boolean {
+    if (typeof content !== "string") return false;
     const first = content.split("\n")[0];
     return first.includes(";") && /Dato/.test(first);
   },
-  parse(content: string): ParsedTransaction[] {
-    const lines = content.trim().split("\n");
+  parse(content: string | ArrayBuffer): ParsedTransaction[] {
+    const text = content as string;
+    const lines = text.trim().split("\n");
     const txns: ParsedTransaction[] = [];
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -157,12 +170,14 @@ const bankParser: FileParser = {
 
 const amexParser: FileParser = {
   sourceType: "amex",
-  canParse(content: string, _fileName: string): boolean {
+  canParse(content: string | ArrayBuffer, _fileName: string): boolean {
+    if (typeof content !== "string") return false;
     const first = content.split("\n")[0];
     return first.includes(",") && /Dato/.test(first);
   },
-  parse(content: string): ParsedTransaction[] {
-    const lines = content.trim().split("\n");
+  parse(content: string | ArrayBuffer): ParsedTransaction[] {
+    const text = content as string;
+    const lines = text.trim().split("\n");
     const txns: ParsedTransaction[] = [];
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -190,7 +205,121 @@ const amexParser: FileParser = {
   },
 };
 
-const parsers: FileParser[] = [bankParser, amexParser];
+// Bank Norwegian: Excel file with columns like TransactionDate, Text, Amount, etc.
+const bankNorwegianParser: FileParser = {
+  sourceType: "banknorwegian",
+  canParse(_content: string | ArrayBuffer, fileName: string): boolean {
+    const lower = fileName.toLowerCase();
+    // BN files are xlsx and typically have "norwegian" or "bn" in the name
+    return lower.endsWith(".xlsx") || lower.endsWith(".xls");
+  },
+  parse(content: string | ArrayBuffer): ParsedTransaction[] {
+    const data = content instanceof ArrayBuffer ? new Uint8Array(content) : new TextEncoder().encode(content as string);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) throw new Error("Ingen ark funnet i Excel-filen");
+
+    const sheet = workbook.Sheets[sheetName];
+    const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+
+    if (rows.length < 2) throw new Error("Tomt regneark");
+
+    // Find header row - look for a row containing date/amount-like headers
+    let headerIdx = -1;
+    const headerMap: Record<string, number> = {};
+    const dateKeys = ["transactiondate", "dato", "date", "bokføringsdato", "bookingdate"];
+    const textKeys = ["text", "beskrivelse", "description", "forklaring"];
+    const amountKeys = ["amount", "beløp", "belop", "sum"];
+    const merchantKeys = ["merchantcategory", "merchant", "kategori", "bransjekategori"];
+
+    for (let r = 0; r < Math.min(rows.length, 10); r++) {
+      const row = rows[r];
+      if (!row || row.length < 3) continue;
+      const headers = row.map((c: any) => String(c || "").toLowerCase().replace(/\s+/g, ""));
+
+      const dateCol = headers.findIndex((h: string) => dateKeys.some(k => h.includes(k)));
+      const textCol = headers.findIndex((h: string) => textKeys.some(k => h.includes(k)));
+      const amountCol = headers.findIndex((h: string) => amountKeys.some(k => h.includes(k)));
+
+      if (dateCol >= 0 && textCol >= 0 && amountCol >= 0) {
+        headerIdx = r;
+        headerMap["date"] = dateCol;
+        headerMap["text"] = textCol;
+        headerMap["amount"] = amountCol;
+        const mCol = headers.findIndex((h: string) => merchantKeys.some(k => h.includes(k)));
+        if (mCol >= 0) headerMap["merchant"] = mCol;
+        break;
+      }
+    }
+
+    if (headerIdx < 0) {
+      throw new Error("Kunne ikke finne header-rad i Excel-filen. Forventede kolonner: dato, beskrivelse, beløp.");
+    }
+
+    console.log(`BN parser: header at row ${headerIdx}, columns: date=${headerMap["date"]}, text=${headerMap["text"]}, amount=${headerMap["amount"]}, merchant=${headerMap["merchant"] ?? "none"}`);
+
+    const txns: ParsedTransaction[] = [];
+    for (let r = headerIdx + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || row.length < 3) continue;
+
+      const rawDate = row[headerMap["date"]];
+      const rawText = row[headerMap["text"]];
+      const rawAmount = row[headerMap["amount"]];
+
+      if (rawDate == null || rawText == null || rawAmount == null) continue;
+
+      // Parse date - could be Excel serial number, M/DD/YY, or DD.MM.YYYY
+      let bookingDate: string;
+      if (typeof rawDate === "number") {
+        bookingDate = excelDateToISO(rawDate);
+      } else {
+        const dateStr = String(rawDate).trim();
+        if (dateStr.includes("/")) {
+          const parts = dateStr.split("/");
+          if (parts.length === 3) {
+            let [m, d, y] = parts.map(Number);
+            if (y < 100) y += 2000;
+            bookingDate = toISODate(d, m, y);
+          } else continue;
+        } else if (dateStr.includes(".")) {
+          const [d, m, y] = dateStr.split(".").map(Number);
+          bookingDate = toISODate(d, m, y);
+        } else continue;
+      }
+
+      const description = String(rawText).trim();
+      if (!description) continue;
+
+      let amount: number;
+      if (typeof rawAmount === "number") {
+        amount = rawAmount;
+      } else {
+        amount = parseNorwegianNumber(String(rawAmount));
+      }
+      if (isNaN(amount) || amount === 0) continue;
+
+      // BN: negative amounts are expenses, positive are payments/credits
+      // Normalize: expenses should be negative
+      const normalizedAmount = amount;
+
+      const merchant = headerMap["merchant"] != null ? String(row[headerMap["merchant"]] || "").trim() || undefined : undefined;
+
+      txns.push({
+        booking_date: bookingDate,
+        amount: normalizedAmount,
+        currency: "NOK",
+        description_raw: description,
+        merchant,
+        category: categorize(description, bnRules),
+        card_external_id: "banknorwegian",
+      });
+    }
+    return txns;
+  },
+};
+
+const csvParsers: FileParser[] = [bankParser, amexParser];
 
 // ---- Dedup hash ----
 async function computeHash(input: string): Promise<string> {
@@ -206,7 +335,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -244,7 +372,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch import record
     const { data: importRec, error: fetchErr } = await serviceClient
       .from("imports")
       .select("*")
@@ -259,10 +386,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update status to processing
     await serviceClient.from("imports").update({ status: "processing" }).eq("id", importId);
 
-    // Download file from S3 via signed URL
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const AWS_S3_API_KEY = Deno.env.get("AWS_S3_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -301,14 +426,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const content = await fileResponse.text();
+    // Determine if this is an Excel file
+    const isExcel = /\.(xlsx|xls)$/i.test(importRec.file_name);
 
-    // Find matching parser
     let matchedParser: FileParser | null = null;
-    for (const p of parsers) {
-      if (p.canParse(content, importRec.file_name)) {
-        matchedParser = p;
-        break;
+    let fileContent: string | ArrayBuffer;
+
+    if (isExcel) {
+      fileContent = await fileResponse.arrayBuffer();
+      matchedParser = bankNorwegianParser;
+    } else {
+      fileContent = await fileResponse.text();
+      for (const p of csvParsers) {
+        if (p.canParse(fileContent, importRec.file_name)) {
+          matchedParser = p;
+          break;
+        }
       }
     }
 
@@ -323,15 +456,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update source type
     await serviceClient.from("imports").update({ source_type: matchedParser.sourceType }).eq("id", importId);
 
-    // Parse
     let parsed: ParsedTransaction[];
     try {
-      parsed = matchedParser.parse(content);
+      parsed = matchedParser.parse(fileContent);
     } catch (parseErr) {
       const msg = parseErr instanceof Error ? parseErr.message : "Parse error";
+      console.error("Parse error:", msg);
       await serviceClient.from("imports").update({ status: "failed", error_message: msg }).eq("id", importId);
       return new Response(JSON.stringify({ error: msg }), {
         status: 400,
@@ -350,7 +482,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build transaction rows with dedup hash
+    console.log(`Parsed ${parsed.length} transactions from ${importRec.file_name} (${matchedParser.sourceType})`);
+
     const rows = [];
     for (const t of parsed) {
       const hashInput = `${t.booking_date}|${t.amount}|${t.description_raw}|${t.account_external_id || ""}|${t.card_external_id || ""}`;
@@ -371,11 +504,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Insert with ON CONFLICT skip for dedup
     const { data: inserted, error: insertErr } = await serviceClient
       .from("transactions")
       .upsert(rows, { onConflict: "user_id,dedup_hash", ignoreDuplicates: true })
       .select("id");
+
+    if (insertErr) {
+      console.error("Insert error:", insertErr);
+    }
 
     const insertedCount = inserted?.length ?? 0;
 
