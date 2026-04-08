@@ -378,6 +378,10 @@ const sasMCParser: FileParser = {
         }
         if (isNaN(amount) || amount === 0) continue;
 
+        // SAS MC has inverted sign: positive = expense, negative = income
+        // Flip sign to match our convention: negative = expense, positive = income
+        amount = -amount;
+
         const merchant = sec.merchantCol >= 0 ? String(row[sec.merchantCol] || "").trim() || undefined : undefined;
 
         txns.push({
