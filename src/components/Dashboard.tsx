@@ -298,7 +298,31 @@ export function Dashboard() {
           </PopoverContent>
         </Popover>
 
-        {/* Refresh button */}
+        {/* Card holder multi-select */}
+        {allCardHolders.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-48 justify-start gap-2">
+                <User className="h-4 w-4" />
+                {cardHolderFilter.size === 0 ? 'Alle brukere' : `${cardHolderFilter.size} brukere`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set(allCardHolders))}>Alle</button>
+                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set())}>Nullstill</button>
+                </div>
+                {allCardHolders.map(ch => (
+                  <label key={ch} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox checked={cardHolderFilter.has(ch)} onCheckedChange={() => setCardHolderFilter(prev => toggleInSet(prev, ch))} />
+                    {ch}
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
         <div className="ml-auto">
           <Button
             variant="outline"
@@ -381,13 +405,14 @@ export function Dashboard() {
           <div className="max-h-96 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-card">
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2 font-medium">Dato</th>
-                  <th className="pb-2 font-medium">Beskrivelse</th>
-                  <th className="pb-2 font-medium">Kategori</th>
-                  <th className="pb-2 font-medium">Kilde</th>
-                  <th className="pb-2 font-medium text-right">Beløp</th>
-                </tr>
+                 <tr className="border-b text-left text-muted-foreground">
+                   <th className="pb-2 font-medium">Dato</th>
+                   <th className="pb-2 font-medium">Beskrivelse</th>
+                   <th className="pb-2 font-medium">Kategori</th>
+                   <th className="pb-2 font-medium">Kilde</th>
+                   <th className="pb-2 font-medium">Bruker</th>
+                   <th className="pb-2 font-medium text-right">Beløp</th>
+                 </tr>
               </thead>
               <tbody>
                 {filtered.map(t => (
@@ -401,6 +426,7 @@ export function Dashboard() {
                       </span>
                     </td>
                     <td className="py-2 text-muted-foreground text-xs">{t.sourceLabel}</td>
+                    <td className="py-2 text-xs font-medium">{t.cardHolder || '–'}</td>
                     <td className={`py-2 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
                       {formatNOK(t.amount)}
                     </td>
