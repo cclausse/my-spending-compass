@@ -1,5 +1,5 @@
 import { Transaction, TransactionSource } from '@/types/transaction';
-import { categorize } from './categorize';
+import { categorize, determineCostType } from './categorize';
 
 let idCounter = 0;
 const nextId = () => `txn-${++idCounter}`;
@@ -69,7 +69,7 @@ export function parseBankCSV(content: string): Transaction[] {
       category: categorize(beskrivelse, 'bank'),
       source: 'bank',
       sourceLabel: 'Regningskonto',
-      costType: 'V',
+      costType: determineCostType(beskrivelse),
     });
   }
   return transactions;
@@ -108,7 +108,7 @@ export function parseAmexCSV(content: string): Transaction[] {
       category: categorize(beskrivelse, 'amex'),
       source: 'amex',
       sourceLabel: 'AMEX',
-      costType: 'V',
+      costType: determineCostType(beskrivelse),
     });
   }
   return transactions;
