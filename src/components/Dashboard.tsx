@@ -129,8 +129,9 @@ export function Dashboard() {
   const filtered = useMemo(() => {
     let result = afterCategory;
     if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
+    if (costTypeFilter.size > 0 && costTypeFilter.size < 2) result = result.filter(t => costTypeFilter.has(t.costType));
     return result;
-  }, [afterCategory, descriptionFilter]);
+  }, [afterCategory, descriptionFilter, costTypeFilter]);
 
   // Clean up stale selections when available options change
   // (category filter can only contain available categories)
