@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +41,7 @@ export function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
+  const [cardHolderFilter, setCardHolderFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
   const initialized = useRef(false);
@@ -70,23 +71,30 @@ export function Dashboard() {
     return Array.from(set).sort();
   }, [transactions]);
 
+  const allCardHolders = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach(t => { if (t.cardHolder) set.add(t.cardHolder); });
+    return Array.from(set).sort();
+  }, [transactions]);
+
   // Initialize all filters to "all selected" on first data load
   useEffect(() => {
     if (transactions.length > 0 && !initialized.current) {
       initialized.current = true;
       setMonthFilter(new Set(allMonths));
       setSourceFilter(new Set(allSources));
-      // Categories and descriptions will be set after cascade below
+      setCardHolderFilter(new Set(allCardHolders));
     }
-  }, [transactions, allMonths, allSources]);
+  }, [transactions, allMonths, allSources, allCardHolders]);
 
   // Step 1: filter by period + source
   const afterPeriodAndSource = useMemo(() => {
     let result = transactions;
     if (monthFilter.size > 0) result = result.filter(t => monthFilter.has(format(t.date, 'yyyy-MM')));
     if (sourceFilter.size > 0) result = result.filter(t => sourceFilter.has(t.sourceLabel));
+    if (cardHolderFilter.size > 0) result = result.filter(t => !t.cardHolder || cardHolderFilter.has(t.cardHolder));
     return result;
-  }, [transactions, monthFilter, sourceFilter]);
+  }, [transactions, monthFilter, sourceFilter, cardHolderFilter]);
 
   // Available categories based on period+source selection
   const availableCategories = useMemo(() => {
