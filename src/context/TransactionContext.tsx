@@ -7,7 +7,7 @@ interface TransactionState {
   loading: boolean;
   refreshTransactions: () => Promise<void>;
   clearTransactions: () => void;
-  updateCategory: (transactionId: string, category: Category) => Promise<void>;
+  updateCategory: (transactionId: string, category: Category) => Promise<number>;
 }
 
 const TransactionContext = createContext<TransactionState | null>(null);
@@ -76,15 +76,28 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   const clearTransactions = useCallback(() => setTransactions([]), []);
 
   const updateCategory = useCallback(async (transactionId: string, category: Category) => {
+    // Find the transaction to get its description
+    const target = transactions.find(t => t.id === transactionId);
+    if (!target) throw new Error('Transaction not found');
+
+    const description = target.description;
+
+    // Update ALL transactions with the same description
     const { error } = await supabase
       .from('transactions')
       .update({ category })
-      .eq('id', transactionId);
+      .eq('description_raw', description);
     if (error) throw error;
+
+    // Update local state for all matching transactions
     setTransactions(prev =>
-      prev.map(t => t.id === transactionId ? { ...t, category } : t)
+      prev.map(t => t.description === description ? { ...t, category } : t)
     );
-  }, []);
+
+    // Return count for toast feedback
+    const matchCount = transactions.filter(t => t.description === description).length;
+    return matchCount;
+  }, [transactions]);
 
   return (
     <TransactionContext.Provider value={{ transactions, loading, refreshTransactions: fetchTransactions, clearTransactions, updateCategory }}>
