@@ -1,11 +1,12 @@
-import { FileUpload } from '@/components/FileUpload';
 import { Dashboard } from '@/components/Dashboard';
-import { TransactionProvider, useTransactions } from '@/context/TransactionContext';
+import { TransactionProvider } from '@/context/TransactionContext';
+import { NavLink } from '@/components/NavLink';
+import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 function PageContent() {
-  const { transactions, clearTransactions } = useTransactions();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
@@ -15,16 +16,13 @@ function PageContent() {
             <h1 className="text-xl font-bold tracking-tight">Økonomi&shy;oversikt</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Analyser og kategoriser ditt forbruk</p>
           </div>
-          {transactions.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={clearTransactions} className="text-muted-foreground">
-              <Trash2 className="h-4 w-4 mr-1" /> Nullstill
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => navigate('/import')} className="gap-2">
+            <Upload className="h-4 w-4" /> Import
+          </Button>
         </div>
       </header>
 
       <main className="container mx-auto py-6 px-4 space-y-6">
-        <FileUpload />
         <Dashboard />
       </main>
     </div>

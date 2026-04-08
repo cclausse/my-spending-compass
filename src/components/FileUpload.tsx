@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import { Upload, FileText, Check, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useTransactions } from '@/context/TransactionContext';
 import { detectFormat, parseBankCSV, parseAmexCSV } from '@/lib/parsers';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,8 +13,7 @@ interface FileResult {
   message?: string;
 }
 
-export function FileUpload() {
-  const { addTransactions, storeFiles } = useTransactions();
+export function FileUpload({ onTransactions }: { onTransactions?: (txns: any[]) => void }) {
   const { toast } = useToast();
   const [results, setResults] = useState<FileResult[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -34,16 +32,16 @@ export function FileUpload() {
       else if (format === 'amex') txns = parseAmexCSV(content);
       else return { name: file.name, count: 0, source: 'ukjent', status: 'error' as const, message: 'Format ikke støttet ennå' };
 
-      addTransactions(txns);
+      onTransactions?.(txns);
       return { name: file.name, count: txns.length, source: format === 'bank' ? 'Regningskonto' : 'AMEX', status: 'success' as const };
     } catch (e) {
       return { name: file.name, count: 0, source: 'ukjent', status: 'error' as const, message: 'Kunne ikke lese filen' };
     }
-  }, [addTransactions]);
+  }, [onTransactions]);
 
   const handleFiles = useCallback(async (files: FileList) => {
     const fileArray = Array.from(files);
-    storeFiles(fileArray);
+    
     const fileResults: FileResult[] = [];
     for (const file of fileArray) {
       const result = await processFile(file);
@@ -55,7 +53,7 @@ export function FileUpload() {
     if (total > 0) {
       toast({ title: `${total} transaksjoner importert`, description: `Fra ${fileResults.filter(r => r.status === 'success').length} fil(er)` });
     }
-  }, [processFile, toast, storeFiles]);
+  }, [processFile, toast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();

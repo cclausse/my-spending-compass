@@ -1,67 +1,80 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { Transaction } from '@/types/transaction';
-import { detectFormat, parseBankCSV, parseAmexCSV } from '@/lib/parsers';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { Transaction, Category } from '@/types/transaction';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TransactionState {
   transactions: Transaction[];
-  addTransactions: (txns: Transaction[]) => void;
+  loading: boolean;
+  refreshTransactions: () => Promise<void>;
   clearTransactions: () => void;
-  storeFiles: (files: File[]) => void;
-  refreshFiles: () => Promise<void>;
-  storedFileCount: number;
 }
 
 const TransactionContext = createContext<TransactionState | null>(null);
 
-
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const storedFilesRef = useRef<File[]>([]);
-  const [storedFileCount, setStoredFileCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const addTransactions = useCallback((txns: Transaction[]) => {
-    setTransactions(prev => {
-      const existingIds = new Set(prev.map(t => `${t.date.getTime()}-${t.description}-${t.amount}`));
-      const newTxns = txns.filter(t => !existingIds.has(`${t.date.getTime()}-${t.description}-${t.amount}`));
-      return [...prev, ...newTxns].sort((a, b) => b.date.getTime() - a.date.getTime());
-    });
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch all transactions for the logged-in user (RLS handles filtering)
+      // Supabase default limit is 1000, paginate if needed
+      let allRows: any[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*, imports!inner(source_type)')
+          .order('booking_date', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error) {
+          console.error('Error fetching transactions:', error);
+          break;
+        }
+
+        allRows = allRows.concat(data || []);
+        hasMore = (data?.length || 0) === pageSize;
+        from += pageSize;
+      }
+
+      const SOURCE_LABELS: Record<string, string> = {
+        bank: 'Regningskonto',
+        amex: 'AMEX',
+        sasmc: 'SAS MC',
+        banknorwegian: 'Bank Norwegian',
+      };
+
+      const mapped: Transaction[] = allRows.map(row => ({
+        id: row.id,
+        date: new Date(row.booking_date),
+        description: row.description_raw,
+        amount: Number(row.amount),
+        category: (row.category || 'annet') as Category,
+        source: (row.imports?.source_type || 'bank') as Transaction['source'],
+        sourceLabel: SOURCE_LABELS[row.imports?.source_type || 'bank'] || row.imports?.source_type || 'Ukjent',
+      }));
+
+      setTransactions(mapped);
+    } catch (e) {
+      console.error('Failed to fetch transactions:', e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const clearTransactions = useCallback(() => setTransactions([]), []);
 
-  const storeFiles = useCallback((files: File[]) => {
-    const existingNames = new Set(storedFilesRef.current.map(f => f.name));
-    const newFiles = files.filter(f => !existingNames.has(f.name));
-    storedFilesRef.current = [...storedFilesRef.current, ...newFiles];
-    setStoredFileCount(storedFilesRef.current.length);
-  }, []);
-
-  const refreshFiles = useCallback(async () => {
-    const allTxns: Transaction[] = [];
-    for (const file of storedFilesRef.current) {
-      try {
-        const content = await file.text();
-        const format = detectFormat(content, file.name);
-        if (!format) continue;
-        let txns: Transaction[] = [];
-        if (format === 'bank') txns = parseBankCSV(content);
-        else if (format === 'amex') txns = parseAmexCSV(content);
-        allTxns.push(...txns);
-      } catch {
-        // skip unreadable files
-      }
-    }
-    // Replace all transactions with fresh parse
-    const deduped = new Map<string, Transaction>();
-    for (const t of allTxns) {
-      const key = `${t.date.getTime()}-${t.description}-${t.amount}`;
-      if (!deduped.has(key)) deduped.set(key, t);
-    }
-    setTransactions(Array.from(deduped.values()).sort((a, b) => b.date.getTime() - a.date.getTime()));
-  }, []);
-
   return (
-    <TransactionContext.Provider value={{ transactions, addTransactions, clearTransactions, storeFiles, refreshFiles, storedFileCount }}>
+    <TransactionContext.Provider value={{ transactions, loading, refreshTransactions: fetchTransactions, clearTransactions }}>
       {children}
     </TransactionContext.Provider>
   );
