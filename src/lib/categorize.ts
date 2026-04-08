@@ -37,11 +37,8 @@ const bankRules: Rule[] = [
   },
   { keys: ["hamleys", "elkjop", "power", "komplett"], category: "elektronikk" },
   { keys: ["forsikring", "fremtind", "storebrand", "gjensidige"], category: "forsikring" },
-  { keys: ["varsling", "gebyr", "zolva", "trumfp", "intrum", "kravia", "rente"], category: "gebyrer" },
-  {
-    keys: ["dronningens tenner", "apotek", "boots", "legen", "tannlege", "melin collectors", "tannklinikk"],
-    category: "helse",
-  },
+  { keys: ["varsling", "gebyr", "zolva", "trumfp", "intrum", "kravia"], category: "gebyrer" },
+  { keys: ["dronningens tenner", "apotek", "boots", "legen", "tannlege", "melin collectors"], category: "helse" },
   { keys: ["lån", "statens pensjon"], category: "laan" },
   { keys: ["lyse tele"], category: "mobil" },
   { keys: ["credicare", "collectia", "payex", "4212 58 85130 fakturanummer 716"], category: "ikke_bestemt" },
@@ -76,16 +73,16 @@ const bankRules: Rule[] = [
     ],
     category: "reise",
   },
-  { keys: ["dott", "ryde"], category: "sparkesykkel" },
+  { keys: ["voi", "dott", "ryde"], category: "sparkesykkel" },
   { keys: ["tensio", "tibber", "gardåveien", "landstads vei"], category: "strom" },
   { keys: ["impulse", "sport", "medlem", "vertical playground"], category: "sport_fritid" },
   { keys: ["vitnett", "neas", "telenor"], category: "tv_media" },
-  { keys: ["invoice", "3t", "allan magne fallrø"], category: "trening" },
+  { keys: ["3t ", "allan magne fallrø"], category: "trening" },
   {
     keys: ["tfl travel", "vy", "ruter", "uber", "bolt", "bensin", "circle k", "shell", "entur web", "atb app"],
     category: "transport",
   },
-  { keys: ["espos", "kahoot", "openai", "chatgpt", "pluralsight", "fl studio"], category: "jobb" },
+  { keys: ["espos", "kahoot", "openai", "chatgpt", "pluralsight"], category: "jobb" },
 ];
 
 const amexRules: Rule[] = [
@@ -131,7 +128,6 @@ const amexRules: Rule[] = [
       "juan les pins",
       "duty-free",
       "a316",
-      "klm",
     ],
     category: "reise",
   },
@@ -155,8 +151,8 @@ const amexRules: Rule[] = [
   },
   { keys: ["zwift", "spond", "trainerroad"], category: "trening" },
   { keys: ["lyse tele"], category: "mobil" },
-  { keys: ["hamleys", "elkjop", "power", "komplett", "elektroimportoeren"], category: "elektronikk" },
-  { keys: ["apotek", "boots", "legen", "tannlege", "vita2700trondheimt", "tannklinikk"], category: "helse" },
+  { keys: ["hamleys", "elkjop", "power", "komplett"], category: "elektronikk" },
+  { keys: ["apotek", "boots", "legen", "tannlege", "vita2700trondheimt"], category: "helse" },
   {
     keys: [
       "retro",
@@ -186,7 +182,7 @@ const amexRules: Rule[] = [
   { keys: ["polet"], category: "polet" },
   { keys: ["ticketmaster"], category: "konserter" },
   { keys: ["sport", "medlem", "vertical playground"], category: "sport_fritid" },
-  { keys: ["fee", "gebyr", "rente"], category: "gebyrer" },
+  { keys: ["fee", "gebyr"], category: "gebyrer" },
   { keys: ["forsikring", "gjensidige", "tryg", "fremtind", "storebrand"], category: "forsikring" },
 ];
 
