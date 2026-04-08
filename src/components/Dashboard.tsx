@@ -425,7 +425,8 @@ export function Dashboard() {
                         value={t.category}
                         onValueChange={async (val) => {
                           try {
-                            await updateCategory(t.id, val as Category);
+                            const count = await updateCategory(t.id, val as Category);
+                            toast({ title: 'Kategori oppdatert', description: `${count} transaksjon${count > 1 ? 'er' : ''} med «${t.description}» ble oppdatert` });
                           } catch {
                             toast({ title: 'Feil', description: 'Kunne ikke oppdatere kategori', variant: 'destructive' });
                           }
