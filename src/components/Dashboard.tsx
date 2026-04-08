@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +41,7 @@ export function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
+  const [cardHolderFilter, setCardHolderFilter] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<Set<Category>>(new Set());
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
   const initialized = useRef(false);
@@ -70,23 +71,30 @@ export function Dashboard() {
     return Array.from(set).sort();
   }, [transactions]);
 
+  const allCardHolders = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach(t => { if (t.cardHolder) set.add(t.cardHolder); });
+    return Array.from(set).sort();
+  }, [transactions]);
+
   // Initialize all filters to "all selected" on first data load
   useEffect(() => {
     if (transactions.length > 0 && !initialized.current) {
       initialized.current = true;
       setMonthFilter(new Set(allMonths));
       setSourceFilter(new Set(allSources));
-      // Categories and descriptions will be set after cascade below
+      setCardHolderFilter(new Set(allCardHolders));
     }
-  }, [transactions, allMonths, allSources]);
+  }, [transactions, allMonths, allSources, allCardHolders]);
 
   // Step 1: filter by period + source
   const afterPeriodAndSource = useMemo(() => {
     let result = transactions;
     if (monthFilter.size > 0) result = result.filter(t => monthFilter.has(format(t.date, 'yyyy-MM')));
     if (sourceFilter.size > 0) result = result.filter(t => sourceFilter.has(t.sourceLabel));
+    if (cardHolderFilter.size > 0) result = result.filter(t => !t.cardHolder || cardHolderFilter.has(t.cardHolder));
     return result;
-  }, [transactions, monthFilter, sourceFilter]);
+  }, [transactions, monthFilter, sourceFilter, cardHolderFilter]);
 
   // Available categories based on period+source selection
   const availableCategories = useMemo(() => {
@@ -290,7 +298,31 @@ export function Dashboard() {
           </PopoverContent>
         </Popover>
 
-        {/* Refresh button */}
+        {/* Card holder multi-select */}
+        {allCardHolders.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-48 justify-start gap-2">
+                <User className="h-4 w-4" />
+                {cardHolderFilter.size === 0 ? 'Alle brukere' : `${cardHolderFilter.size} brukere`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set(allCardHolders))}>Alle</button>
+                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set())}>Nullstill</button>
+                </div>
+                {allCardHolders.map(ch => (
+                  <label key={ch} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox checked={cardHolderFilter.has(ch)} onCheckedChange={() => setCardHolderFilter(prev => toggleInSet(prev, ch))} />
+                    {ch}
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
         <div className="ml-auto">
           <Button
             variant="outline"
@@ -373,13 +405,14 @@ export function Dashboard() {
           <div className="max-h-96 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-card">
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2 font-medium">Dato</th>
-                  <th className="pb-2 font-medium">Beskrivelse</th>
-                  <th className="pb-2 font-medium">Kategori</th>
-                  <th className="pb-2 font-medium">Kilde</th>
-                  <th className="pb-2 font-medium text-right">Beløp</th>
-                </tr>
+                 <tr className="border-b text-left text-muted-foreground">
+                   <th className="pb-2 font-medium">Dato</th>
+                   <th className="pb-2 font-medium">Beskrivelse</th>
+                   <th className="pb-2 font-medium">Kategori</th>
+                   <th className="pb-2 font-medium">Kilde</th>
+                   <th className="pb-2 font-medium">Bruker</th>
+                   <th className="pb-2 font-medium text-right">Beløp</th>
+                 </tr>
               </thead>
               <tbody>
                 {filtered.map(t => (
@@ -393,6 +426,7 @@ export function Dashboard() {
                       </span>
                     </td>
                     <td className="py-2 text-muted-foreground text-xs">{t.sourceLabel}</td>
+                    <td className="py-2 text-xs font-medium">{t.cardHolder || '–'}</td>
                     <td className={`py-2 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-destructive' : 'text-green-600'}`}>
                       {formatNOK(t.amount)}
                     </td>
