@@ -109,7 +109,7 @@ export function parseAmexCSV(content: string): Transaction[] {
       source: 'amex',
       sourceLabel: 'AMEX',
       costType: 'V',
-  }
+    });
 
   return transactions;
 }
