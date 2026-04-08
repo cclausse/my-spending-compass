@@ -71,7 +71,7 @@ export function parseBankCSV(content: string): Transaction[] {
       sourceLabel: 'Regningskonto',
       costType: 'V',
     });
-
+  }
   return transactions;
 }
 
@@ -110,7 +110,7 @@ export function parseAmexCSV(content: string): Transaction[] {
       sourceLabel: 'AMEX',
       costType: 'V',
     });
-
+  }
   return transactions;
 }
 
