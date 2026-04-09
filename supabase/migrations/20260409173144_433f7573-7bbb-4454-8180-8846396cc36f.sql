@@ -1,0 +1,1 @@
+UPDATE public.transactions SET card_holder = 'CC' WHERE card_external_id = 'sasmc' AND card_holder IS NULL;
