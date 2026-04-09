@@ -185,6 +185,26 @@ export function Dashboard() {
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
 
+  const currentYear = new Date().getFullYear();
+  const prevYear = currentYear - 1;
+
+  const expensesCurrentYear = useMemo(() => expenses.filter(t => t.date.getFullYear() === currentYear), [expenses, currentYear]);
+  const expensesPrevYear = useMemo(() => expenses.filter(t => t.date.getFullYear() === prevYear), [expenses, prevYear]);
+  const totalExpensesCurrentYear = expensesCurrentYear.reduce((s, t) => s + t.amount, 0);
+  const totalExpensesPrevYear = expensesPrevYear.reduce((s, t) => s + t.amount, 0);
+
+  const avgFixedCurrentYear = useMemo(() => {
+    const fixed = filtered.filter(t => t.amount < 0 && t.costType === 'F' && t.date.getFullYear() === currentYear);
+    const months = new Set(fixed.map(t => format(t.date, 'yyyy-MM')));
+    return months.size > 0 ? Math.round(fixed.reduce((s, t) => s + Math.abs(t.amount), 0) / months.size) : 0;
+  }, [filtered, currentYear]);
+
+  const avgFixedPrevYear = useMemo(() => {
+    const fixed = filtered.filter(t => t.amount < 0 && t.costType === 'F' && t.date.getFullYear() === prevYear);
+    const months = new Set(fixed.map(t => format(t.date, 'yyyy-MM')));
+    return months.size > 0 ? Math.round(fixed.reduce((s, t) => s + Math.abs(t.amount), 0) / months.size) : 0;
+  }, [filtered, prevYear]);
+
   // Reset visible rows when filters change
   useEffect(() => { setVisibleRows(PAGE_SIZE); }, [filtered]);
 
