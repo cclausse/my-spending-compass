@@ -166,14 +166,18 @@ export function Dashboard() {
   }, [expenses]);
 
   const monthlyData = useMemo(() => {
-    const map = new Map<string, { month: string; expenses: number; income: number }>();
+    const map = new Map<string, { month: string; fixedExpenses: number; variableExpenses: number; income: number }>();
     filtered.forEach(t => {
       const m = format(t.date, 'MMM yy', { locale: nb });
       const key = format(t.date, 'yyyy-MM');
-      if (!map.has(key)) map.set(key, { month: m, expenses: 0, income: 0 });
+      if (!map.has(key)) map.set(key, { month: m, fixedExpenses: 0, variableExpenses: 0, income: 0 });
       const entry = map.get(key)!;
-      if (t.amount < 0) entry.expenses += Math.abs(t.amount);
-      else entry.income += t.amount;
+      if (t.amount < 0) {
+        if (t.costType === 'F') entry.fixedExpenses += Math.abs(t.amount);
+        else entry.variableExpenses += Math.abs(t.amount);
+      } else {
+        entry.income += t.amount;
+      }
     });
     return Array.from(map.entries()).sort(([a], [b]) => (a ?? '').localeCompare(b ?? '')).map(([, v]) => v);
   }, [filtered]);
