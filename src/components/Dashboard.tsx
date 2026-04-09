@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransactions } from '@/context/TransactionContext';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Category, CostType, COST_TYPE_LABELS } from '@/types/transaction';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Legend, LineChart, Line } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -185,6 +185,31 @@ export function Dashboard() {
       }
     });
     return Array.from(map.entries()).sort(([a], [b]) => (a ?? '').localeCompare(b ?? '')).map(([, v]) => v);
+  }, [filtered]);
+
+  const SOURCE_COLORS: Record<string, string> = {
+    'Bankkonto': 'hsl(210, 70%, 50%)',
+    'Amex': 'hsl(25, 80%, 55%)',
+    'SAS MC': 'hsl(280, 55%, 55%)',
+    'Bank Norwegian': 'hsl(340, 65%, 55%)',
+  };
+
+  const sourceMonthlyData = useMemo(() => {
+    const map = new Map<string, Record<string, string | number>>();
+    const sources = new Set<string>();
+    filtered.filter(t => t.amount < 0).forEach(t => {
+      const key = format(t.date, 'yyyy-MM');
+      const label = format(t.date, 'MMM yy', { locale: nb });
+      if (!map.has(key)) map.set(key, { month: label });
+      const entry = map.get(key)!;
+      const src = t.sourceLabel;
+      sources.add(src);
+      entry[src] = ((entry[src] as number) || 0) + Math.abs(t.amount);
+    });
+    return {
+      data: Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v),
+      sources: Array.from(sources).sort(),
+    };
   }, [filtered]);
 
   if (loading) {
@@ -457,6 +482,48 @@ export function Dashboard() {
         </Card>
         )}
       </div>
+
+      {/* Source line chart */}
+      {(!expandedCard || expandedCard === 'sourceLine') && (
+        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'sourceLine' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
+          <CardHeader className="relative">
+            <CardTitle className="text-base">Forbruk per kilde</CardTitle>
+            <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'sourceLine' ? null : 'sourceLine')} title={expandedCard === 'sourceLine' ? 'Minimer' : 'Utvid'}>
+              {expandedCard === 'sourceLine' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className={`transition-all duration-300 ease-out ${expandedCard === 'sourceLine' ? 'h-[500px]' : 'h-72'}`}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={sourceMonthlyData.data}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${Math.round(v / 1000)}k`} className="text-muted-foreground" />
+                  <Tooltip formatter={(val: number) => formatNOK(val)} />
+                  <Legend />
+                  {sourceMonthlyData.sources.map((src, i) => {
+                    const fallbackColors = ['hsl(210, 70%, 50%)', 'hsl(25, 80%, 55%)', 'hsl(280, 55%, 55%)', 'hsl(340, 65%, 55%)', 'hsl(160, 50%, 45%)'];
+                    const color = SOURCE_COLORS[src] || fallbackColors[i % fallbackColors.length];
+                    return (
+                      <Line
+                        key={src}
+                        type="monotone"
+                        dataKey={src}
+                        name={src}
+                        stroke={color}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        connectNulls
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {(!expandedCard || expandedCard === 'transactions') && (
       <Card className="transition-all duration-300 ease-out animate-fade-in">
