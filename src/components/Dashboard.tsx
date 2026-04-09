@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransactions } from '@/context/TransactionContext';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Category, CostType, COST_TYPE_LABELS } from '@/types/transaction';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Legend } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -166,14 +166,18 @@ export function Dashboard() {
   }, [expenses]);
 
   const monthlyData = useMemo(() => {
-    const map = new Map<string, { month: string; expenses: number; income: number }>();
+    const map = new Map<string, { month: string; fixedExpenses: number; variableExpenses: number; income: number }>();
     filtered.forEach(t => {
       const m = format(t.date, 'MMM yy', { locale: nb });
       const key = format(t.date, 'yyyy-MM');
-      if (!map.has(key)) map.set(key, { month: m, expenses: 0, income: 0 });
+      if (!map.has(key)) map.set(key, { month: m, fixedExpenses: 0, variableExpenses: 0, income: 0 });
       const entry = map.get(key)!;
-      if (t.amount < 0) entry.expenses += Math.abs(t.amount);
-      else entry.income += t.amount;
+      if (t.amount < 0) {
+        if (t.costType === 'F') entry.fixedExpenses += Math.abs(t.amount);
+        else entry.variableExpenses += Math.abs(t.amount);
+      } else {
+        entry.income += t.amount;
+      }
     });
     return Array.from(map.entries()).sort(([a], [b]) => (a ?? '').localeCompare(b ?? '')).map(([, v]) => v);
   }, [filtered]);
@@ -424,8 +428,23 @@ export function Dashboard() {
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
                   <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${Math.round(v / 1000)}k`} className="text-muted-foreground" />
                   <Tooltip formatter={(val: number) => formatNOK(val)} />
-                  <Bar dataKey="expenses" name="Forbruk" fill="hsl(0, 65%, 55%)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="income" name="Inntekt" fill="hsl(142, 60%, 45%)" radius={[4, 4, 0, 0]} />
+                  <Legend />
+                  <Bar dataKey="fixedExpenses" name="Faste" stackId="expenses" fill="hsl(0, 45%, 45%)" />
+                  <Bar dataKey="variableExpenses" name="Variable" stackId="expenses" fill="hsl(0, 65%, 65%)" radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      valueAccessor={(entry: { fixedExpenses: number; variableExpenses: number }) => entry.fixedExpenses + entry.variableExpenses}
+                      formatter={(val: number) => val > 0 ? `${Math.round(val / 1000)}k` : ''}
+                      position="top"
+                      style={{ fontSize: 11, fill: 'hsl(0, 65%, 55%)', fontWeight: 600 }}
+                    />
+                  </Bar>
+                  <Bar dataKey="income" name="Inntekt" fill="hsl(142, 60%, 45%)" radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      formatter={(val: number) => val > 0 ? `${Math.round(val / 1000)}k` : ''}
+                      position="top"
+                      style={{ fontSize: 11, fill: 'hsl(142, 60%, 45%)', fontWeight: 600 }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
