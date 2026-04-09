@@ -200,12 +200,11 @@ export function Dashboard() {
     filtered.filter(t => t.amount < 0).forEach(t => {
       const key = format(t.date, 'yyyy-MM');
       const label = format(t.date, 'MMM yy', { locale: nb });
-      if (!map.has(key)) map.set(key, { month: label } as any);
+      if (!map.has(key)) map.set(key, { month: label });
       const entry = map.get(key)!;
-      if (!entry.month) entry.month = label;
       const src = t.sourceLabel;
       sources.add(src);
-      entry[src] = (entry[src] || 0) + Math.abs(t.amount);
+      entry[src] = ((entry[src] as number) || 0) + Math.abs(t.amount);
     });
     return {
       data: Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v),
