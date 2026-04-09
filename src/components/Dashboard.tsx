@@ -434,10 +434,10 @@ export function Dashboard() {
           <CardContent>
             <div className={`transition-all duration-300 ease-out ${expandedCard === 'bar' ? 'h-[500px]' : 'h-72'}`}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData}>
+                <BarChart data={monthlyData} margin={{ right: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${Math.round(v / 1000)}k`} className="text-muted-foreground" />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${Math.round(v / 1000)}k`} className="text-muted-foreground" domain={[0, (dataMax: number) => Math.max(dataMax, avgFixedCosts) * 1.1]} />
                   <Tooltip formatter={(val: number) => formatNOK(val)} />
                   <Legend />
                   <Bar dataKey="fixedExpenses" name="Faste" stackId="expenses" fill="hsl(0, 45%, 45%)" />
