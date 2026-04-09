@@ -532,8 +532,11 @@ const bnParser: FileParser = {
       }
       if (isNaN(amount) || amount === 0) continue;
 
-      // BN format: positive = expense, negative = refund/income → flip sign
-      amount = -amount;
+      // BN TB: positive = expense, negative = refund/income → flip sign
+      // BN CC: amounts already have correct sign (negative = expense)
+      if (this.sourceType === "banknorwegian_tb") {
+        amount = -amount;
+      }
 
       const merchant = merchantCol >= 0 ? String(row[merchantCol] || "").trim() || undefined : undefined;
 
