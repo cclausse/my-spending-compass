@@ -407,7 +407,7 @@ export function Dashboard() {
               </div>
                {ALL_COST_TYPES.map(ct => (
                 <label key={ct} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={costTypeFilter.has(ct)} onCheckedChange={() => setCostTypeFilter(prev => toggleInSet(prev, ct))} />
+                  <Checkbox checked={costTypeFilter.has(ct)} onCheckedChange={() => toggleCostType(ct)} />
                   {COST_TYPE_LABELS[ct]}
                 </label>
               ))}
