@@ -588,7 +588,7 @@ export function Dashboard() {
                  </tr>
               </thead>
               <tbody>
-                {filtered.map(t => (
+                {filtered.slice(0, visibleRows).map(t => (
                   <tr key={t.id} className="border-b border-border/50 hover:bg-muted/50">
                     <td className="py-2 text-muted-foreground">{format(t.date, 'dd.MM.yy')}</td>
                     <td className="py-2 max-w-48 truncate">{t.description}</td>
@@ -653,6 +653,13 @@ export function Dashboard() {
                 ))}
               </tbody>
             </table>
+            {filtered.length > visibleRows && (
+              <div className="flex justify-center pt-3">
+                <Button variant="ghost" size="sm" onClick={() => setVisibleRows(prev => prev + PAGE_SIZE)}>
+                  Vis flere ({filtered.length - visibleRows} gjenstår)
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
