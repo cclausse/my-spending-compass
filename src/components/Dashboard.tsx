@@ -185,6 +185,26 @@ export function Dashboard() {
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
 
+  const currentYear = new Date().getFullYear();
+  const prevYear = currentYear - 1;
+
+  const expensesCurrentYear = useMemo(() => expenses.filter(t => t.date.getFullYear() === currentYear), [expenses, currentYear]);
+  const expensesPrevYear = useMemo(() => expenses.filter(t => t.date.getFullYear() === prevYear), [expenses, prevYear]);
+  const totalExpensesCurrentYear = expensesCurrentYear.reduce((s, t) => s + t.amount, 0);
+  const totalExpensesPrevYear = expensesPrevYear.reduce((s, t) => s + t.amount, 0);
+
+  const avgFixedCurrentYear = useMemo(() => {
+    const fixed = filtered.filter(t => t.amount < 0 && t.costType === 'F' && t.date.getFullYear() === currentYear);
+    const months = new Set(fixed.map(t => format(t.date, 'yyyy-MM')));
+    return months.size > 0 ? Math.round(fixed.reduce((s, t) => s + Math.abs(t.amount), 0) / months.size) : 0;
+  }, [filtered, currentYear]);
+
+  const avgFixedPrevYear = useMemo(() => {
+    const fixed = filtered.filter(t => t.amount < 0 && t.costType === 'F' && t.date.getFullYear() === prevYear);
+    const months = new Set(fixed.map(t => format(t.date, 'yyyy-MM')));
+    return months.size > 0 ? Math.round(fixed.reduce((s, t) => s + Math.abs(t.amount), 0) / months.size) : 0;
+  }, [filtered, prevYear]);
+
   // Reset visible rows when filters change
   useEffect(() => { setVisibleRows(PAGE_SIZE); }, [filtered]);
 
@@ -439,10 +459,31 @@ export function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Totalt forbruk" value={formatNOK(Math.abs(totalExpenses))} icon={TrendingDown} className="bg-destructive/10 text-destructive" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard title={`Forbruk ${currentYear}`} value={formatNOK(Math.abs(totalExpensesCurrentYear))} icon={TrendingDown} className="bg-destructive/10 text-destructive" />
+        <StatCard title={`Forbruk ${prevYear}`} value={formatNOK(Math.abs(totalExpensesPrevYear))} icon={TrendingDown} className="bg-destructive/10 text-destructive" />
         <StatCard title="Inntekter" value={formatNOK(totalIncome)} icon={TrendingUp} className="bg-green-100 text-green-700" />
         <StatCard title="Netto" value={formatNOK(totalIncome + totalExpenses)} icon={ArrowUpDown} className="bg-primary/10 text-primary" />
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Snitt faste kostnader/mnd</p>
+            <div className="flex items-end gap-4">
+              <div>
+                <p className="text-[10px] text-muted-foreground">{currentYear}</p>
+                <p className="text-lg font-bold tracking-tight">{formatNOK(avgFixedCurrentYear)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">{prevYear}</p>
+                <p className="text-lg font-bold tracking-tight text-muted-foreground">{formatNOK(avgFixedPrevYear)}</p>
+              </div>
+              {avgFixedPrevYear > 0 && (
+                <div className={`text-xs font-semibold px-1.5 py-0.5 rounded ${avgFixedCurrentYear <= avgFixedPrevYear ? 'bg-green-100 text-green-700' : 'bg-destructive/10 text-destructive'}`}>
+                  {avgFixedCurrentYear <= avgFixedPrevYear ? '↓' : '↑'} {Math.abs(Math.round((avgFixedCurrentYear - avgFixedPrevYear) / avgFixedPrevYear * 100))}%
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className={`grid gap-6 ${expandedCard && expandedCard !== 'transactions' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
