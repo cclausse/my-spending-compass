@@ -358,7 +358,7 @@ export function Dashboard() {
               </div>
               {availableDescriptions.map(desc => (
                 <label key={desc} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={descriptionFilter.has(desc)} onCheckedChange={() => setDescriptionFilter(prev => toggleInSet(prev, desc))} />
+                  <Checkbox checked={descriptionFilter.has(desc)} onCheckedChange={() => toggleDescription(desc)} />
                   <span className="truncate max-w-52">{desc}</span>
                 </label>
               ))}
