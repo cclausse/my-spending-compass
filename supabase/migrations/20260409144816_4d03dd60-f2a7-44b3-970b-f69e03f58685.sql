@@ -1,0 +1,1 @@
+UPDATE public.transactions SET amount = -amount WHERE import_id IN (SELECT id FROM public.imports WHERE source_type = 'banknorwegian_cc');
