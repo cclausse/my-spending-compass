@@ -193,6 +193,32 @@ export function Dashboard() {
     return Math.round(total / monthlyData.length);
   }, [monthlyData]);
 
+  const SOURCE_COLORS: Record<string, string> = {
+    'Bankkonto': 'hsl(210, 70%, 50%)',
+    'Amex': 'hsl(25, 80%, 55%)',
+    'SAS MC': 'hsl(280, 55%, 55%)',
+    'Bank Norwegian': 'hsl(340, 65%, 55%)',
+  };
+  const SOURCE_FALLBACK = ['hsl(160, 50%, 45%)', 'hsl(50, 75%, 50%)', 'hsl(190, 60%, 45%)'];
+
+  const sourceMonthlyData = useMemo(() => {
+    const map = new Map<string, Record<string, string | number>>();
+    const sources = new Set<string>();
+    expenses.forEach(t => {
+      const key = format(t.date, 'yyyy-MM');
+      const label = format(t.date, 'MMM yy', { locale: nb });
+      if (!map.has(key)) map.set(key, { month: label });
+      const entry = map.get(key)!;
+      const src = t.sourceLabel;
+      sources.add(src);
+      entry[src] = ((entry[src] as number) || 0) + Math.abs(t.amount);
+    });
+    return {
+      data: Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v),
+      sources: Array.from(sources).sort(),
+    };
+  }, [expenses]);
+
   if (loading) {
     return (
       <Card>
@@ -472,6 +498,45 @@ export function Dashboard() {
         </Card>
         )}
       </div>
+
+      {/* Source stacked bar chart */}
+      {(!expandedCard || expandedCard === 'sourceBar') && (
+        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'sourceBar' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
+          <CardHeader className="relative">
+            <CardTitle className="text-base">Kostnader per kilde</CardTitle>
+            <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'sourceBar' ? null : 'sourceBar')} title={expandedCard === 'sourceBar' ? 'Minimer' : 'Utvid'}>
+              {expandedCard === 'sourceBar' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className={`transition-all duration-300 ease-out ${expandedCard === 'sourceBar' ? 'h-[500px]' : 'h-72'}`}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={sourceMonthlyData.data}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${Math.round(v / 1000)}k`} className="text-muted-foreground" />
+                  <Tooltip formatter={(val: number) => formatNOK(val)} />
+                  <Legend />
+                  {sourceMonthlyData.sources.map((src, i) => {
+                    const color = SOURCE_COLORS[src] || SOURCE_FALLBACK[i % SOURCE_FALLBACK.length];
+                    const isLast = i === sourceMonthlyData.sources.length - 1;
+                    return (
+                      <Bar
+                        key={src}
+                        dataKey={src}
+                        name={src}
+                        stackId="source"
+                        fill={color}
+                        radius={isLast ? [4, 4, 0, 0] : undefined}
+                      />
+                    );
+                  })}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {(!expandedCard || expandedCard === 'transactions') && (
       <Card className="transition-all duration-300 ease-out animate-fade-in">
