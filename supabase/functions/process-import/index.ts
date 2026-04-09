@@ -674,13 +674,22 @@ Deno.serve(async (req) => {
       // Route to correct parser based on filename
       const lowerName = importRec.file_name.toLowerCase();
       if (lowerName.includes("bn") || lowerName.includes("norwegian")) {
-        // Determine CC vs TB from filename
         const isTB = lowerName.includes("_tb") || lowerName.includes(" tb");
         const sourceType = isTB ? "banknorwegian_tb" : "banknorwegian_cc";
         bnParser.sourceType = sourceType;
         matchedParser = bnParser;
-      } else {
+      } else if (lowerName.includes("sas") || lowerName.includes("_mc") || lowerName.includes("sas_mc")) {
         matchedParser = sasMCParser;
+      } else {
+        // Unknown Excel file — fail with helpful message
+        await serviceClient.from("imports").update({
+          status: "failed",
+          error_message: "Ukjent Excel-fil. Filnavn må inneholde 'bn'/'norwegian' for Bank Norwegian, eller 'sas'/'sas_mc' for SAS MC.",
+        }).eq("id", importId);
+        return new Response(JSON.stringify({ error: "Unknown Excel file format" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     } else {
       fileContent = await fileResponse.text();
