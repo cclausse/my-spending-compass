@@ -433,7 +433,7 @@ const sasMCParser: FileParser = {
           merchant,
           category: categorize(textStr, sasMCRules),
           card_external_id: "sasmc",
-          card_holder: sec.cardHolder,
+          card_holder: sectionCardHolder,
           cost_type: determineCostType(textStr),
         });
       }
