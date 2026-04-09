@@ -361,7 +361,7 @@ const sasMCParser: FileParser = {
         if (!textStr || skipRowPatterns.test(textStr)) continue;
 
         // In "Totalt andre hendelser" section, only keep payment rows
-        if (onlyPayments && !/innbetaling/i.test(textStr)) continue;
+        if (onlyPayments && !/innbetaling|årskontingent/i.test(textStr)) continue;
 
         // Also check first cell for skip patterns
         const firstCellStr = String(row[0] || "").trim();
