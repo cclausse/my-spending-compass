@@ -185,6 +185,9 @@ export function Dashboard() {
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
 
+  // Reset visible rows when filters change
+  useEffect(() => { setVisibleRows(PAGE_SIZE); }, [filtered]);
+
   const categoryData = useMemo(() => {
     const map = new Map<Category, number>();
     expenses.forEach(t => map.set(t.category, (map.get(t.category) || 0) + Math.abs(t.amount)));
