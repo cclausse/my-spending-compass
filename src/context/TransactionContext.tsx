@@ -47,6 +47,8 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         amex: 'AMEX',
         sasmc: 'SAS MC',
         banknorwegian: 'Bank Norwegian',
+        banknorwegian_cc: 'Bank Norwegian CC',
+        banknorwegian_tb: 'Bank Norwegian TB',
       };
 
       const mapped: Transaction[] = allRows.map(row => ({

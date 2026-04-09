@@ -189,8 +189,10 @@ const amexRules: Rule[] = [
 const rulesBySource: Record<TransactionSource, Rule[]> = {
   bank: bankRules,
   amex: amexRules,
-  sasmc: amexRules, // placeholder until dedicated rules
-  banknorwegian: amexRules, // placeholder until dedicated rules
+  sasmc: amexRules,
+  banknorwegian: amexRules,
+  banknorwegian_cc: amexRules,
+  banknorwegian_tb: amexRules,
 };
 
 function matchRules(description: string, rules: Rule[]): Category {
