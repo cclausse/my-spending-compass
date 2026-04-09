@@ -462,7 +462,7 @@ export function Dashboard() {
                       stroke="hsl(210, 70%, 50%)"
                       strokeDasharray="6 3"
                       strokeWidth={2}
-                      label={{ value: `Snitt fast: ${Math.round(avgFixedCosts / 1000)}k`, position: 'insideTopRight', fontSize: 11, fill: 'hsl(210, 70%, 50%)', fontWeight: 600 }}
+                      label={{ value: `Snitt fast: ${Math.round(avgFixedCosts / 1000)}k`, position: 'right', fontSize: 11, fill: 'hsl(210, 70%, 50%)', fontWeight: 600 }}
                     />
                   )}
                 </BarChart>
