@@ -434,13 +434,16 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* Transaction list */}
+      {(!expandedCard || expandedCard === 'transactions') && (
       <Card>
-        <CardHeader>
+        <CardHeader className="relative">
           <CardTitle className="text-base">Transaksjoner ({filtered.length})</CardTitle>
+          <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'transactions' ? null : 'transactions')} title={expandedCard === 'transactions' ? 'Minimer' : 'Utvid'}>
+            {expandedCard === 'transactions' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="max-h-96 overflow-y-auto">
+          <div className={expandedCard === 'transactions' ? 'max-h-[80vh] overflow-y-auto' : 'max-h-96 overflow-y-auto'}>
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-card">
                  <tr className="border-b text-left text-muted-foreground">
