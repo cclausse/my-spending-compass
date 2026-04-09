@@ -409,7 +409,7 @@ export function Dashboard() {
 
         {/* Monthly Bar */}
         {(!expandedCard || expandedCard === 'bar') && (
-        <Card className={expandedCard === 'bar' ? 'col-span-full' : ''}>
+        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'bar' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
           <CardHeader className="relative">
             <CardTitle className="text-base">Månedlig oversikt</CardTitle>
             <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'bar' ? null : 'bar')} title={expandedCard === 'bar' ? 'Minimer' : 'Utvid'}>
