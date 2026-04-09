@@ -374,7 +374,7 @@ export function Dashboard() {
       <div className={`grid gap-6 ${expandedCard && expandedCard !== 'transactions' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
         {/* Category Pie */}
         {(!expandedCard || expandedCard === 'pie') && (
-        <Card className={expandedCard === 'pie' ? 'col-span-full' : ''}>
+        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'pie' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
           <CardHeader className="relative">
             <CardTitle className="text-base">Forbruk per kategori</CardTitle>
             <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'pie' ? null : 'pie')} title={expandedCard === 'pie' ? 'Minimer' : 'Utvid'}>
