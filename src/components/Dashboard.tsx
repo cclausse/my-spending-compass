@@ -687,47 +687,6 @@ export function Dashboard() {
         </Card>
       )}
 
-      {/* Grouped by category & description */}
-      {(!expandedCard || expandedCard === 'grouped') && (
-        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'grouped' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
-          <CardHeader className="relative">
-            <CardTitle className="text-base">Forbruk per kategori og beskrivelse</CardTitle>
-            <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'grouped' ? null : 'grouped')} title={expandedCard === 'grouped' ? 'Minimer' : 'Utvid'}>
-              {expandedCard === 'grouped' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className={expandedCard === 'grouped' ? 'max-h-[80vh] overflow-y-auto' : 'max-h-[500px] overflow-y-auto'}>
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-card">
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Kategori</th>
-                    <th className="pb-2 font-medium">Beskrivelse</th>
-                    <th className="pb-2 font-medium text-right">Antall</th>
-                    <th className="pb-2 font-medium text-right">Sum</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupedData.map((g, i) => (
-                    <tr key={`${g.category}-${g.description}-${i}`} className="border-b border-border/50 hover:bg-muted/50">
-                      <td className="py-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs">
-                          <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[g.category] }} />
-                          {CATEGORY_LABELS[g.category]}
-                        </span>
-                      </td>
-                      <td className="py-2 max-w-64 truncate">{g.description}</td>
-                      <td className="py-2 text-right text-muted-foreground">{g.count}</td>
-                      <td className="py-2 text-right font-mono tabular-nums text-destructive">{formatNOK(g.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {(!expandedCard || expandedCard === 'transactions') && (
       <Card className="transition-all duration-300 ease-out animate-fade-in">
         <CardHeader className="relative">
@@ -826,6 +785,47 @@ export function Dashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
+
+      {/* Grouped by category & description */}
+      {(!expandedCard || expandedCard === 'grouped') && (
+        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'grouped' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
+          <CardHeader className="relative">
+            <CardTitle className="text-base">Forbruk per kategori og beskrivelse</CardTitle>
+            <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'grouped' ? null : 'grouped')} title={expandedCard === 'grouped' ? 'Minimer' : 'Utvid'}>
+              {expandedCard === 'grouped' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className={expandedCard === 'grouped' ? 'max-h-[80vh] overflow-y-auto' : 'max-h-[500px] overflow-y-auto'}>
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-card">
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="pb-2 font-medium">Kategori</th>
+                    <th className="pb-2 font-medium">Beskrivelse</th>
+                    <th className="pb-2 font-medium text-right">Antall</th>
+                    <th className="pb-2 font-medium text-right">Sum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedData.map((g, i) => (
+                    <tr key={`${g.category}-${g.description}-${i}`} className="border-b border-border/50 hover:bg-muted/50">
+                      <td className="py-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs">
+                          <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[g.category] }} />
+                          {CATEGORY_LABELS[g.category]}
+                        </span>
+                      </td>
+                      <td className="py-2 max-w-64 truncate">{g.description}</td>
+                      <td className="py-2 text-right text-muted-foreground">{g.count}</td>
+                      <td className="py-2 text-right font-mono tabular-nums text-destructive">{formatNOK(g.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
