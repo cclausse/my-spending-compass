@@ -40,6 +40,7 @@ export function Dashboard() {
   const { transactions, loading, refreshTransactions, updateCategory, updateCostType } = useTransactions();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
   const [cardHolderFilter, setCardHolderFilter] = useState<Set<string>>(new Set());
