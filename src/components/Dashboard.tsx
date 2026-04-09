@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User, Lock } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User, Lock, Maximize2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,7 @@ export function Dashboard() {
   const { transactions, loading, refreshTransactions, updateCategory, updateCostType } = useTransactions();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [monthFilter, setMonthFilter] = useState<Set<string>>(new Set());
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
   const [cardHolderFilter, setCardHolderFilter] = useState<Set<string>>(new Set());
@@ -370,17 +371,21 @@ export function Dashboard() {
         <StatCard title="Netto" value={formatNOK(totalIncome + totalExpenses)} icon={ArrowUpDown} className="bg-primary/10 text-primary" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid gap-6 ${expandedCard && expandedCard !== 'transactions' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
         {/* Category Pie */}
-        <Card>
-          <CardHeader>
+        {(!expandedCard || expandedCard === 'pie') && (
+        <Card className={expandedCard === 'pie' ? 'col-span-full' : ''}>
+          <CardHeader className="relative">
             <CardTitle className="text-base">Forbruk per kategori</CardTitle>
+            <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'pie' ? null : 'pie')} title={expandedCard === 'pie' ? 'Minimer' : 'Utvid'}>
+              {expandedCard === 'pie' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className={expandedCard === 'pie' ? 'h-[500px]' : 'h-72'}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" paddingAngle={2}>
+                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={expandedCard === 'pie' ? 160 : 100} dataKey="value" paddingAngle={2}>
                     {categoryData.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
@@ -400,14 +405,19 @@ export function Dashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Monthly Bar */}
-        <Card>
-          <CardHeader>
+        {(!expandedCard || expandedCard === 'bar') && (
+        <Card className={expandedCard === 'bar' ? 'col-span-full' : ''}>
+          <CardHeader className="relative">
             <CardTitle className="text-base">Månedlig oversikt</CardTitle>
+            <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'bar' ? null : 'bar')} title={expandedCard === 'bar' ? 'Minimer' : 'Utvid'}>
+              {expandedCard === 'bar' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className={expandedCard === 'bar' ? 'h-[500px]' : 'h-72'}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -421,15 +431,19 @@ export function Dashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
-      {/* Transaction list */}
+      {(!expandedCard || expandedCard === 'transactions') && (
       <Card>
-        <CardHeader>
+        <CardHeader className="relative">
           <CardTitle className="text-base">Transaksjoner ({filtered.length})</CardTitle>
+          <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'transactions' ? null : 'transactions')} title={expandedCard === 'transactions' ? 'Minimer' : 'Utvid'}>
+            {expandedCard === 'transactions' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="max-h-96 overflow-y-auto">
+          <div className={expandedCard === 'transactions' ? 'max-h-[80vh] overflow-y-auto' : 'max-h-96 overflow-y-auto'}>
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-card">
                  <tr className="border-b text-left text-muted-foreground">
@@ -511,6 +525,7 @@ export function Dashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
