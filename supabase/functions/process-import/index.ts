@@ -429,7 +429,7 @@ const sasMCParser: FileParser = {
 
 // ---- Bank Norwegian parser ----
 const bnParser: FileParser = {
-  sourceType: "banknorwegian",
+  sourceType: "banknorwegian_cc", // default, overridden by routing
   canParse(_content: string | ArrayBuffer, fileName: string): boolean {
     const lower = fileName.toLowerCase();
     return (lower.endsWith(".xlsx") || lower.endsWith(".xls")) && (lower.includes("bn") || lower.includes("norwegian"));
@@ -537,8 +537,8 @@ const bnParser: FileParser = {
 
       const merchant = merchantCol >= 0 ? String(row[merchantCol] || "").trim() || undefined : undefined;
 
-      // Derive card_external_id from filename (bn_cc or bn_tb)
-      const cardId = "banknorwegian";
+      // card_external_id set dynamically by routing
+      const cardId = "banknorwegian_cc";
 
       txns.push({
         booking_date: bookingDate,
@@ -675,6 +675,10 @@ Deno.serve(async (req) => {
       // Route to correct parser based on filename
       const lowerName = importRec.file_name.toLowerCase();
       if (lowerName.includes("bn") || lowerName.includes("norwegian")) {
+        // Determine CC vs TB from filename
+        const isTB = lowerName.includes("_tb") || lowerName.includes(" tb");
+        const sourceType = isTB ? "banknorwegian_tb" : "banknorwegian_cc";
+        bnParser.sourceType = sourceType;
         matchedParser = bnParser;
       } else {
         matchedParser = sasMCParser;
