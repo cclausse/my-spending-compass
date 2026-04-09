@@ -46,7 +46,6 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         bank: 'Regningskonto',
         amex: 'AMEX',
         sasmc: 'SAS MC',
-        banknorwegian: 'Bank Norwegian',
         banknorwegian_cc: 'Bank Norwegian CC',
         banknorwegian_tb: 'Bank Norwegian TB',
       };

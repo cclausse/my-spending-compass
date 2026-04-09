@@ -30,7 +30,6 @@ const sourceLabels: Record<string, string> = {
   bank: 'Regningskonto',
   amex: 'AMEX',
   sasmc: 'SAS MC',
-  banknorwegian: 'Bank Norwegian',
   banknorwegian_cc: 'Bank Norwegian CC',
   banknorwegian_tb: 'Bank Norwegian TB',
 };
