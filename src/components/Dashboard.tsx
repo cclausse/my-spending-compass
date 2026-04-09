@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransactions } from '@/context/TransactionContext';
 import { CATEGORY_LABELS, CATEGORY_COLORS, Category, CostType, COST_TYPE_LABELS } from '@/types/transaction';
@@ -51,6 +51,8 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
   return next;
 }
 
+const PAGE_SIZE = 100;
+
 export function Dashboard() {
   const { transactions, loading, refreshTransactions, updateCategory, updateCostType } = useTransactions();
   const { toast } = useToast();
@@ -63,6 +65,27 @@ export function Dashboard() {
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
   const [costTypeFilter, setCostTypeFilter] = useState<Set<CostType>>(new Set(['F', 'V']));
   const initialized = useRef(false);
+  const [isPending, startTransition] = useTransition();
+  const [visibleRows, setVisibleRows] = useState(PAGE_SIZE);
+
+  const toggleMonth = useCallback((m: string) => {
+    startTransition(() => setMonthFilter(prev => toggleInSet(prev, m)));
+  }, []);
+  const toggleSource = useCallback((s: string) => {
+    startTransition(() => setSourceFilter(prev => toggleInSet(prev, s)));
+  }, []);
+  const toggleCategory = useCallback((cat: Category) => {
+    startTransition(() => setCategoryFilter(prev => toggleInSet(prev, cat)));
+  }, []);
+  const toggleDescription = useCallback((desc: string) => {
+    startTransition(() => setDescriptionFilter(prev => toggleInSet(prev, desc)));
+  }, []);
+  const toggleCardHolder = useCallback((ch: string) => {
+    startTransition(() => setCardHolderFilter(prev => toggleInSet(prev, ch)));
+  }, []);
+  const toggleCostType = useCallback((ct: CostType) => {
+    startTransition(() => setCostTypeFilter(prev => toggleInSet(prev, ct)));
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -162,6 +185,9 @@ export function Dashboard() {
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
 
+  // Reset visible rows when filters change
+  useEffect(() => { setVisibleRows(PAGE_SIZE); }, [filtered]);
+
   const categoryData = useMemo(() => {
     const map = new Map<Category, number>();
     expenses.forEach(t => map.set(t.category, (map.get(t.category) || 0) + Math.abs(t.amount)));
@@ -246,6 +272,7 @@ export function Dashboard() {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
+        {isPending && <div className="text-xs text-muted-foreground animate-pulse">Oppdaterer…</div>}
         {/* Period multi-select */}
         <Popover>
           <PopoverTrigger asChild>
@@ -257,12 +284,12 @@ export function Dashboard() {
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setMonthFilter(new Set(allMonths))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setMonthFilter(new Set())}>Nullstill</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setMonthFilter(new Set(allMonths)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setMonthFilter(new Set()))}>Nullstill</button>
               </div>
               {allMonths.map(m => (
                 <label key={m} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={monthFilter.has(m)} onCheckedChange={() => setMonthFilter(prev => toggleInSet(prev, m))} />
+                  <Checkbox checked={monthFilter.has(m)} onCheckedChange={() => toggleMonth(m)} />
                   {format(new Date(m + '-01'), 'MMMM yyyy', { locale: nb })}
                 </label>
               ))}
@@ -281,12 +308,12 @@ export function Dashboard() {
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setSourceFilter(new Set(allSources))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setSourceFilter(new Set())}>Nullstill</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setSourceFilter(new Set(allSources)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setSourceFilter(new Set()))}>Nullstill</button>
               </div>
               {allSources.map(s => (
                 <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={sourceFilter.has(s)} onCheckedChange={() => setSourceFilter(prev => toggleInSet(prev, s))} />
+                  <Checkbox checked={sourceFilter.has(s)} onCheckedChange={() => toggleSource(s)} />
                   {s}
                 </label>
               ))}
@@ -305,12 +332,12 @@ export function Dashboard() {
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCategoryFilter(new Set(availableCategories))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCategoryFilter(new Set())}>Nullstill</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCategoryFilter(new Set(availableCategories)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCategoryFilter(new Set()))}>Nullstill</button>
               </div>
               {availableCategories.map(cat => (
                 <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={categoryFilter.has(cat)} onCheckedChange={() => setCategoryFilter(prev => toggleInSet(prev, cat))} />
+                  <Checkbox checked={categoryFilter.has(cat)} onCheckedChange={() => toggleCategory(cat)} />
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] }} />
                   {CATEGORY_LABELS[cat]}
                 </label>
@@ -330,12 +357,12 @@ export function Dashboard() {
           <PopoverContent className="w-72 max-h-80 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setDescriptionFilter(new Set(availableDescriptions))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setDescriptionFilter(new Set())}>Nullstill</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setDescriptionFilter(new Set(availableDescriptions)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setDescriptionFilter(new Set()))}>Nullstill</button>
               </div>
               {availableDescriptions.map(desc => (
                 <label key={desc} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={descriptionFilter.has(desc)} onCheckedChange={() => setDescriptionFilter(prev => toggleInSet(prev, desc))} />
+                  <Checkbox checked={descriptionFilter.has(desc)} onCheckedChange={() => toggleDescription(desc)} />
                   <span className="truncate max-w-52">{desc}</span>
                 </label>
               ))}
@@ -355,12 +382,12 @@ export function Dashboard() {
             <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
               <div className="space-y-2">
                 <div className="flex gap-2">
-                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set(availableCardHolders))}>Alle</button>
-                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set())}>Nullstill</button>
+                   <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCardHolderFilter(new Set(availableCardHolders)))}>Alle</button>
+                   <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCardHolderFilter(new Set()))}>Nullstill</button>
                 </div>
                 {availableCardHolders.map(ch => (
                   <label key={ch} className="flex items-center gap-2 cursor-pointer text-sm">
-                    <Checkbox checked={cardHolderFilter.has(ch)} onCheckedChange={() => setCardHolderFilter(prev => toggleInSet(prev, ch))} />
+                    <Checkbox checked={cardHolderFilter.has(ch)} onCheckedChange={() => toggleCardHolder(ch)} />
                     {ch}
                   </label>
                 ))}
@@ -379,12 +406,12 @@ export function Dashboard() {
           <PopoverContent className="w-48 p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set(ALL_COST_TYPES))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set())}>Nullstill</button>
+                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCostTypeFilter(new Set(ALL_COST_TYPES)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCostTypeFilter(new Set()))}>Nullstill</button>
               </div>
                {ALL_COST_TYPES.map(ct => (
                 <label key={ct} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={costTypeFilter.has(ct)} onCheckedChange={() => setCostTypeFilter(prev => toggleInSet(prev, ct))} />
+                  <Checkbox checked={costTypeFilter.has(ct)} onCheckedChange={() => toggleCostType(ct)} />
                   {COST_TYPE_LABELS[ct]}
                 </label>
               ))}
@@ -561,7 +588,7 @@ export function Dashboard() {
                  </tr>
               </thead>
               <tbody>
-                {filtered.map(t => (
+                {filtered.slice(0, visibleRows).map(t => (
                   <tr key={t.id} className="border-b border-border/50 hover:bg-muted/50">
                     <td className="py-2 text-muted-foreground">{format(t.date, 'dd.MM.yy')}</td>
                     <td className="py-2 max-w-48 truncate">{t.description}</td>
@@ -626,6 +653,13 @@ export function Dashboard() {
                 ))}
               </tbody>
             </table>
+            {filtered.length > visibleRows && (
+              <div className="flex justify-center pt-3">
+                <Button variant="ghost" size="sm" onClick={() => setVisibleRows(prev => prev + PAGE_SIZE)}>
+                  Vis flere ({filtered.length - visibleRows} gjenstår)
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
