@@ -270,12 +270,14 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Floating update indicator – always rendered, visibility toggled to avoid layout shifts */}
+      <div
+        className="fixed top-4 right-4 z-50 bg-popover border rounded-md px-3 py-1.5 text-xs text-muted-foreground shadow-md transition-opacity duration-150"
+        style={{ opacity: isPending ? 1 : 0, pointerEvents: 'none' }}
+      >
+        Oppdaterer…
+      </div>
       {/* Filters */}
-      {isPending && (
-        <div className="fixed top-4 right-4 z-50 bg-popover border rounded-md px-3 py-1.5 text-xs text-muted-foreground animate-pulse shadow-md">
-          Oppdaterer…
-        </div>
-      )}
       <div className="flex items-center gap-3 flex-wrap">
         {/* Period multi-select */}
         <Popover>
