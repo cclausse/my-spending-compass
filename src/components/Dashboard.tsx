@@ -131,7 +131,14 @@ export function Dashboard() {
     setDescriptionFilter(new Set());
   }, [availableDescriptions]);
 
-  const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
+  // Step 3: final filtered result
+  const filtered = useMemo(() => {
+    let result = afterCategory;
+    if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
+    if (costTypeFilter.size > 0 && costTypeFilter.size < 3) result = result.filter(t => costTypeFilter.has(t.costType));
+    return result;
+  }, [afterCategory, descriptionFilter, costTypeFilter]);
+
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
