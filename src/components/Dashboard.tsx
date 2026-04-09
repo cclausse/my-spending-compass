@@ -459,9 +459,27 @@ export function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard title={`Forbruk ${currentYear}`} value={formatNOK(Math.abs(totalExpensesCurrentYear))} icon={TrendingDown} className="bg-destructive/10 text-destructive" />
-        <StatCard title={`Forbruk ${prevYear}`} value={formatNOK(Math.abs(totalExpensesPrevYear))} icon={TrendingDown} className="bg-destructive/10 text-destructive" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Totalt forbruk</p>
+            <div className="flex items-end gap-4">
+              <div>
+                <p className="text-[10px] text-muted-foreground">{currentYear}</p>
+                <p className="text-lg font-bold tracking-tight">{formatNOK(Math.abs(totalExpensesCurrentYear))}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">{prevYear}</p>
+                <p className="text-lg font-bold tracking-tight text-muted-foreground">{formatNOK(Math.abs(totalExpensesPrevYear))}</p>
+              </div>
+              {totalExpensesPrevYear !== 0 && (
+                <div className={`text-xs font-semibold px-1.5 py-0.5 rounded ${Math.abs(totalExpensesCurrentYear) <= Math.abs(totalExpensesPrevYear) ? 'bg-green-100 text-green-700' : 'bg-destructive/10 text-destructive'}`}>
+                  {Math.abs(totalExpensesCurrentYear) <= Math.abs(totalExpensesPrevYear) ? '↓' : '↑'} {Math.abs(Math.round((Math.abs(totalExpensesCurrentYear) - Math.abs(totalExpensesPrevYear)) / Math.abs(totalExpensesPrevYear) * 100))}%
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
         <StatCard title="Inntekter" value={formatNOK(totalIncome)} icon={TrendingUp} className="bg-green-100 text-green-700" />
         <StatCard title="Netto" value={formatNOK(totalIncome + totalExpenses)} icon={ArrowUpDown} className="bg-primary/10 text-primary" />
         <Card>
