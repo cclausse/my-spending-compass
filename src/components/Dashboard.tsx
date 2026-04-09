@@ -382,7 +382,7 @@ export function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className={expandedCard === 'pie' ? 'h-[500px]' : 'h-72'}>
+            <div className={`transition-all duration-300 ease-out ${expandedCard === 'pie' ? 'h-[500px]' : 'h-72'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={expandedCard === 'pie' ? 160 : 100} dataKey="value" paddingAngle={2}>
