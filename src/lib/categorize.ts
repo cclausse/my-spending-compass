@@ -178,6 +178,10 @@ const amexRules: Rule[] = [
   },
   { keys: ["hyre", "tesla"], category: "bil" },
   { keys: ["espos", "kahoot", "openai", "chatgpt", "pluralsight"], category: "jobb" },
+  {
+    keys: ["innbetaling", "refund", "reversal", "payment received", "credit", "tilbakeføring", "takk"],
+    category: "innbetaling",
+  },
   { keys: ["refund", "reversal", "payment received", "credit", "tilbakeføring", "takk"], category: "innbetaling" },
   { keys: ["polet"], category: "polet" },
   { keys: ["ticketmaster"], category: "konserter" },
@@ -250,4 +254,3 @@ export function determineCostType(description: string): CostType {
   const d = description.toLowerCase();
   return fixedCostKeys.some((k) => d.includes(k)) ? "F" : "V";
 }
-
