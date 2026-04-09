@@ -309,7 +309,7 @@ export function Dashboard() {
               </div>
               {allSources.map(s => (
                 <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={sourceFilter.has(s)} onCheckedChange={() => setSourceFilter(prev => toggleInSet(prev, s))} />
+                  <Checkbox checked={sourceFilter.has(s)} onCheckedChange={() => toggleSource(s)} />
                   {s}
                 </label>
               ))}
