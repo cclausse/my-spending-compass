@@ -51,6 +51,8 @@ function toggleInSet<T>(prev: Set<T>, item: T): Set<T> {
   return next;
 }
 
+const PAGE_SIZE = 100;
+
 export function Dashboard() {
   const { transactions, loading, refreshTransactions, updateCategory, updateCostType } = useTransactions();
   const { toast } = useToast();
@@ -63,6 +65,27 @@ export function Dashboard() {
   const [descriptionFilter, setDescriptionFilter] = useState<Set<string>>(new Set());
   const [costTypeFilter, setCostTypeFilter] = useState<Set<CostType>>(new Set(['F', 'V']));
   const initialized = useRef(false);
+  const [isPending, startTransition] = useTransition();
+  const [visibleRows, setVisibleRows] = useState(PAGE_SIZE);
+
+  const toggleMonth = useCallback((m: string) => {
+    startTransition(() => setMonthFilter(prev => toggleInSet(prev, m)));
+  }, []);
+  const toggleSource = useCallback((s: string) => {
+    startTransition(() => setSourceFilter(prev => toggleInSet(prev, s)));
+  }, []);
+  const toggleCategory = useCallback((cat: Category) => {
+    startTransition(() => setCategoryFilter(prev => toggleInSet(prev, cat)));
+  }, []);
+  const toggleDescription = useCallback((desc: string) => {
+    startTransition(() => setDescriptionFilter(prev => toggleInSet(prev, desc)));
+  }, []);
+  const toggleCardHolder = useCallback((ch: string) => {
+    startTransition(() => setCardHolderFilter(prev => toggleInSet(prev, ch)));
+  }, []);
+  const toggleCostType = useCallback((ct: CostType) => {
+    startTransition(() => setCostTypeFilter(prev => toggleInSet(prev, ct)));
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
