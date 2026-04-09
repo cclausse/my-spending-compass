@@ -11,6 +11,21 @@ import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import {
+  ALL_COST_TYPES,
+  areSetsEqual,
+  filterByCardHolder,
+  filterByCategory,
+  filterByDescriptionAndCostType,
+  filterByMonthAndSource,
+  getAllMonths,
+  getAllSources,
+  getAvailableCardHolders,
+  getAvailableCategories,
+  getAvailableDescriptions,
+  isDefaultSelection,
+  reconcileSelection,
+} from '@/lib/dashboardFilters';
 
 function StatCard({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType; className?: string }) {
   return (
@@ -62,23 +77,9 @@ export function Dashboard() {
   };
 
   // All available months & sources (global)
-  const allMonths = useMemo(() => {
-    const set = new Set<string>();
-    transactions.forEach(t => set.add(format(t.date, 'yyyy-MM')));
-    return Array.from(set).sort().reverse();
-  }, [transactions]);
+  const allMonths = useMemo(() => getAllMonths(transactions), [transactions]);
 
-  const allSources = useMemo(() => {
-    const set = new Set<string>();
-    transactions.forEach(t => set.add(t.sourceLabel));
-    return Array.from(set).sort();
-  }, [transactions]);
-
-  const allCardHolders = useMemo(() => {
-    const set = new Set<string>();
-    transactions.forEach(t => { if (t.cardHolder) set.add(t.cardHolder); });
-    return Array.from(set).sort();
-  }, [transactions]);
+  const allSources = useMemo(() => getAllSources(transactions), [transactions]);
 
   // Initialize all filters to "all selected" on first data load
   useEffect(() => {
@@ -86,58 +87,75 @@ export function Dashboard() {
       initialized.current = true;
       setMonthFilter(new Set(allMonths));
       setSourceFilter(new Set(allSources));
-      setCardHolderFilter(new Set(allCardHolders));
     }
-  }, [transactions, allMonths, allSources, allCardHolders]);
+  }, [transactions, allMonths, allSources]);
+
+  useEffect(() => {
+    if (!initialized.current) return;
+
+    setMonthFilter((prev) => {
+      const next = reconcileSelection(prev, allMonths);
+      return areSetsEqual(prev, next) ? prev : next;
+    });
+  }, [allMonths]);
+
+  useEffect(() => {
+    if (!initialized.current) return;
+
+    setSourceFilter((prev) => {
+      const next = reconcileSelection(prev, allSources);
+      return areSetsEqual(prev, next) ? prev : next;
+    });
+  }, [allSources]);
 
   // Step 1: filter by period + source
-  const afterPeriodAndSource = useMemo(() => {
-    let result = transactions;
-    if (monthFilter.size > 0) result = result.filter(t => monthFilter.has(format(t.date, 'yyyy-MM')));
-    if (sourceFilter.size > 0) result = result.filter(t => sourceFilter.has(t.sourceLabel));
-    if (cardHolderFilter.size > 0) result = result.filter(t => !t.cardHolder || cardHolderFilter.has(t.cardHolder));
-    return result;
-  }, [transactions, monthFilter, sourceFilter, cardHolderFilter]);
+  const afterPeriodAndSource = useMemo(
+    () => filterByMonthAndSource(transactions, monthFilter, sourceFilter),
+    [transactions, monthFilter, sourceFilter],
+  );
 
-  // Available categories based on period+source selection
-  const availableCategories = useMemo(() => {
-    const set = new Set<Category>();
-    afterPeriodAndSource.forEach(t => set.add(t.category));
-    return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
-  }, [afterPeriodAndSource]);
+  const availableCardHolders = useMemo(() => getAvailableCardHolders(afterPeriodAndSource), [afterPeriodAndSource]);
 
-  // Auto-select all available categories when upstream filters change
   useEffect(() => {
-    if (availableCategories.length > 0) {
-      setCategoryFilter(new Set(availableCategories));
-    }
+    setCardHolderFilter((prev) => {
+      const next = reconcileSelection(prev, availableCardHolders);
+      return areSetsEqual(prev, next) ? prev : next;
+    });
+  }, [availableCardHolders]);
+
+  const afterCardHolder = useMemo(
+    () => filterByCardHolder(afterPeriodAndSource, cardHolderFilter),
+    [afterPeriodAndSource, cardHolderFilter],
+  );
+
+  // Available categories based on current upstream selections
+  const availableCategories = useMemo(() => getAvailableCategories(afterCardHolder), [afterCardHolder]);
+
+  useEffect(() => {
+    setCategoryFilter((prev) => {
+      const next = reconcileSelection(prev, availableCategories);
+      return areSetsEqual(prev, next) ? prev : next;
+    });
   }, [availableCategories]);
 
   // Step 2: filter by category
-  const afterCategory = useMemo(() => {
-    if (categoryFilter.size === 0) return afterPeriodAndSource;
-    return afterPeriodAndSource.filter(t => categoryFilter.has(t.category));
-  }, [afterPeriodAndSource, categoryFilter]);
+  const afterCategory = useMemo(() => filterByCategory(afterCardHolder, categoryFilter), [afterCardHolder, categoryFilter]);
 
-  // Available descriptions based on period+source+category
-  const availableDescriptions = useMemo(() => {
-    const set = new Set<string>();
-    afterCategory.forEach(t => set.add(t.description));
-    return Array.from(set).sort();
-  }, [afterCategory]);
+  // Available descriptions based on current upstream selections
+  const availableDescriptions = useMemo(() => getAvailableDescriptions(afterCategory), [afterCategory]);
 
-  // Reset description filter when upstream filters change
   useEffect(() => {
-    setDescriptionFilter(new Set());
+    setDescriptionFilter((prev) => {
+      const next = reconcileSelection(prev, availableDescriptions);
+      return areSetsEqual(prev, next) ? prev : next;
+    });
   }, [availableDescriptions]);
 
   // Step 3: final filtered result
-  const filtered = useMemo(() => {
-    let result = afterCategory;
-    if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
-    if (costTypeFilter.size > 0 && costTypeFilter.size < 3) result = result.filter(t => costTypeFilter.has(t.costType));
-    return result;
-  }, [afterCategory, descriptionFilter, costTypeFilter]);
+  const filtered = useMemo(
+    () => filterByDescriptionAndCostType(afterCategory, descriptionFilter, costTypeFilter),
+    [afterCategory, descriptionFilter, costTypeFilter],
+  );
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
@@ -201,7 +219,7 @@ export function Dashboard() {
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-48 justify-start gap-2">
               <Calendar className="h-4 w-4" />
-              {monthFilter.size === 0 ? 'Alle perioder' : `${monthFilter.size} perioder`}
+               {isDefaultSelection(monthFilter, allMonths) ? 'Alle perioder' : `${monthFilter.size} perioder`}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
@@ -225,7 +243,7 @@ export function Dashboard() {
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-48 justify-start gap-2">
               <CreditCard className="h-4 w-4" />
-              {sourceFilter.size === 0 ? 'Alle kontoer' : `${sourceFilter.size} kontoer`}
+               {isDefaultSelection(sourceFilter, allSources) ? 'Alle kontoer' : `${sourceFilter.size} kontoer`}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
@@ -249,7 +267,7 @@ export function Dashboard() {
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-48 justify-start gap-2">
               <Filter className="h-4 w-4" />
-              {categoryFilter.size === 0 ? 'Ingen kategorier' : `${categoryFilter.size} kategorier`}
+               {availableCategories.length === 0 ? 'Ingen kategorier' : isDefaultSelection(categoryFilter, availableCategories) ? 'Alle kategorier' : `${categoryFilter.size} kategorier`}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
@@ -274,7 +292,7 @@ export function Dashboard() {
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-48 justify-start gap-2">
               <Search className="h-4 w-4" />
-              {descriptionFilter.size === 0 ? 'Alle beskrivelser' : `${descriptionFilter.size} valgt`}
+               {isDefaultSelection(descriptionFilter, availableDescriptions) ? 'Alle beskrivelser' : `${descriptionFilter.size} valgt`}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-72 max-h-80 overflow-y-auto p-3" align="start">
@@ -294,21 +312,21 @@ export function Dashboard() {
         </Popover>
 
         {/* Card holder multi-select */}
-        {allCardHolders.length > 0 && (
+         {availableCardHolders.length > 0 && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-48 justify-start gap-2">
                 <User className="h-4 w-4" />
-                {cardHolderFilter.size === 0 ? 'Alle brukere' : `${cardHolderFilter.size} brukere`}
+                {isDefaultSelection(cardHolderFilter, availableCardHolders) ? 'Alle brukere' : `${cardHolderFilter.size} brukere`}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
               <div className="space-y-2">
                 <div className="flex gap-2">
-                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set(allCardHolders))}>Alle</button>
+                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set(availableCardHolders))}>Alle</button>
                   <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set())}>Nullstill</button>
                 </div>
-                {allCardHolders.map(ch => (
+                {availableCardHolders.map(ch => (
                   <label key={ch} className="flex items-center gap-2 cursor-pointer text-sm">
                     <Checkbox checked={cardHolderFilter.has(ch)} onCheckedChange={() => setCardHolderFilter(prev => toggleInSet(prev, ch))} />
                     {ch}
@@ -323,16 +341,16 @@ export function Dashboard() {
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-40 justify-start gap-2">
               <Lock className="h-4 w-4" />
-              {costTypeFilter.size === 3 ? 'Alle' : costTypeFilter.size === 0 ? 'Ingen' : [...costTypeFilter].map(c => COST_TYPE_LABELS[c]).join(', ')}
+               {isDefaultSelection(costTypeFilter, ALL_COST_TYPES) ? 'Alle' : [...costTypeFilter].map(c => COST_TYPE_LABELS[c]).join(', ')}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set(['F', 'V', 'I']))}>Alle</button>
+                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set(ALL_COST_TYPES))}>Alle</button>
                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set())}>Nullstill</button>
               </div>
-              {(['F', 'V', 'I'] as CostType[]).map(ct => (
+               {ALL_COST_TYPES.map(ct => (
                 <label key={ct} className="flex items-center gap-2 cursor-pointer text-sm">
                   <Checkbox checked={costTypeFilter.has(ct)} onCheckedChange={() => setCostTypeFilter(prev => toggleInSet(prev, ct))} />
                   {COST_TYPE_LABELS[ct]}
