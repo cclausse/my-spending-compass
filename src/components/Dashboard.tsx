@@ -280,8 +280,8 @@ export function Dashboard() {
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setMonthFilter(new Set(allMonths))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setMonthFilter(new Set())}>Nullstill</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setMonthFilter(new Set(allMonths)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setMonthFilter(new Set()))}>Nullstill</button>
               </div>
               {allMonths.map(m => (
                 <label key={m} className="flex items-center gap-2 cursor-pointer text-sm">
