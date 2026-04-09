@@ -1,4 +1,4 @@
-export type TransactionSource = 'bank' | 'amex' | 'sasmc' | 'banknorwegian';
+export type TransactionSource = 'bank' | 'amex' | 'sasmc' | 'banknorwegian' | 'banknorwegian_cc' | 'banknorwegian_tb';
 
 export type Category =
   | 'dagligvarer'

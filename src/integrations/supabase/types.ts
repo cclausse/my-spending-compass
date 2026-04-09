@@ -133,7 +133,13 @@ export type Database = {
     }
     Enums: {
       import_status: "uploaded" | "processing" | "parsed" | "failed"
-      source_type: "bank" | "amex" | "sasmc" | "banknorwegian"
+      source_type:
+        | "bank"
+        | "amex"
+        | "sasmc"
+        | "banknorwegian"
+        | "banknorwegian_cc"
+        | "banknorwegian_tb"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -262,7 +268,14 @@ export const Constants = {
   public: {
     Enums: {
       import_status: ["uploaded", "processing", "parsed", "failed"],
-      source_type: ["bank", "amex", "sasmc", "banknorwegian"],
+      source_type: [
+        "bank",
+        "amex",
+        "sasmc",
+        "banknorwegian",
+        "banknorwegian_cc",
+        "banknorwegian_tb",
+      ],
     },
   },
 } as const

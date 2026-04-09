@@ -31,6 +31,8 @@ const sourceLabels: Record<string, string> = {
   amex: 'AMEX',
   sasmc: 'SAS MC',
   banknorwegian: 'Bank Norwegian',
+  banknorwegian_cc: 'Bank Norwegian CC',
+  banknorwegian_tb: 'Bank Norwegian TB',
 };
 
 function formatBytes(bytes: number): string {
