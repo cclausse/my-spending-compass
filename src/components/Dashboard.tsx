@@ -304,8 +304,8 @@ export function Dashboard() {
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setSourceFilter(new Set(allSources))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setSourceFilter(new Set())}>Nullstill</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setSourceFilter(new Set(allSources)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setSourceFilter(new Set()))}>Nullstill</button>
               </div>
               {allSources.map(s => (
                 <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
