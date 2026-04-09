@@ -342,11 +342,8 @@ const sasMCParser: FileParser = {
 
     for (let s = 0; s < sections.length; s++) {
       const sec = sections[s];
-      // Skip "Totalt andre hendelser" sections entirely
-      if (sec.isTotaltAndre) {
-        console.log(`SAS MC parser: skipping "Totalt andre hendelser" section at row ${sec.headerIdx}`);
-        continue;
-      }
+      // Skip "Totalt andre hendelser" sections, except for payment rows (innbetaling)
+      const onlyPayments = sec.isTotaltAndre;
 
       const endRow = s + 1 < sections.length ? sections[s + 1].headerIdx : rows.length;
 
