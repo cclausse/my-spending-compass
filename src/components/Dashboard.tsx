@@ -428,8 +428,23 @@ export function Dashboard() {
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
                   <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${Math.round(v / 1000)}k`} className="text-muted-foreground" />
                   <Tooltip formatter={(val: number) => formatNOK(val)} />
-                  <Bar dataKey="expenses" name="Forbruk" fill="hsl(0, 65%, 55%)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="income" name="Inntekt" fill="hsl(142, 60%, 45%)" radius={[4, 4, 0, 0]} />
+                  <Legend />
+                  <Bar dataKey="fixedExpenses" name="Faste" stackId="expenses" fill="hsl(0, 45%, 45%)" />
+                  <Bar dataKey="variableExpenses" name="Variable" stackId="expenses" fill="hsl(0, 65%, 65%)" radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      valueAccessor={(entry: { fixedExpenses: number; variableExpenses: number }) => entry.fixedExpenses + entry.variableExpenses}
+                      formatter={(val: number) => val > 0 ? `${Math.round(val / 1000)}k` : ''}
+                      position="top"
+                      style={{ fontSize: 11, fill: 'hsl(0, 65%, 55%)', fontWeight: 600 }}
+                    />
+                  </Bar>
+                  <Bar dataKey="income" name="Inntekt" fill="hsl(142, 60%, 45%)" radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      formatter={(val: number) => val > 0 ? `${Math.round(val / 1000)}k` : ''}
+                      position="top"
+                      style={{ fontSize: 11, fill: 'hsl(142, 60%, 45%)', fontWeight: 600 }}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
