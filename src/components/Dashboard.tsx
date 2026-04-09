@@ -383,7 +383,7 @@ export function Dashboard() {
                 </div>
                 {availableCardHolders.map(ch => (
                   <label key={ch} className="flex items-center gap-2 cursor-pointer text-sm">
-                    <Checkbox checked={cardHolderFilter.has(ch)} onCheckedChange={() => setCardHolderFilter(prev => toggleInSet(prev, ch))} />
+                    <Checkbox checked={cardHolderFilter.has(ch)} onCheckedChange={() => toggleCardHolder(ch)} />
                     {ch}
                   </label>
                 ))}
