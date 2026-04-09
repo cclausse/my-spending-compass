@@ -265,7 +265,19 @@ export function Dashboard() {
     };
   }, [expenses]);
 
-  if (loading) {
+  const groupedData = useMemo(() => {
+    const map = new Map<string, { category: Category; description: string; total: number; count: number }>();
+    expenses.forEach(t => {
+      const key = `${t.category}||${t.description}`;
+      if (!map.has(key)) map.set(key, { category: t.category, description: t.description, total: 0, count: 0 });
+      const entry = map.get(key)!;
+      entry.total += t.amount; // negative
+      entry.count += 1;
+    });
+    return Array.from(map.values()).sort((a, b) => a.total - b.total); // most negative first
+  }, [expenses]);
+
+
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
