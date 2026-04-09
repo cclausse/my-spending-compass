@@ -90,6 +90,9 @@ const amexRules: Rule[] = [
 // SAS MC uses amex rules as placeholder
 const sasMCRules: Rule[] = amexRules;
 
+// Bank Norwegian uses amex-like rules
+const bnRules: Rule[] = amexRules;
+
 function categorize(description: string, rules: Rule[]): string {
   const d = description.toLowerCase();
   for (const rule of rules) {
@@ -424,6 +427,136 @@ const sasMCParser: FileParser = {
   },
 };
 
+// ---- Bank Norwegian parser ----
+const bnParser: FileParser = {
+  sourceType: "banknorwegian",
+  canParse(_content: string | ArrayBuffer, fileName: string): boolean {
+    const lower = fileName.toLowerCase();
+    return (lower.endsWith(".xlsx") || lower.endsWith(".xls")) && (lower.includes("bn") || lower.includes("norwegian"));
+  },
+  parse(content: string | ArrayBuffer): ParsedTransaction[] {
+    const data = content instanceof ArrayBuffer ? new Uint8Array(content) : new TextEncoder().encode(content as string);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) throw new Error("Ingen ark funnet i Excel-filen");
+
+    const sheet = workbook.Sheets[sheetName];
+    const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+
+    if (rows.length < 2) throw new Error("Tomt regneark");
+
+    // Find header row with Dato, Spesifikasjon, Beløp columns
+    const dateKeys = ["dato", "date"];
+    const textKeys = ["spesifikasjon", "tekst", "beskrivelse", "text"];
+    const amountKeys = ["beløp", "belop", "amount"];
+    const merchantKeys = ["sted", "merchant"];
+
+    let headerRow = -1;
+    let dateCol = -1, textCol = -1, amountCol = -1, merchantCol = -1;
+
+    for (let r = 0; r < Math.min(rows.length, 20); r++) {
+      const row = rows[r];
+      if (!row || row.length === 0) continue;
+      const headers = row.map((c: any) => String(c || "").toLowerCase().replace(/\s+/g, ""));
+
+      const dc = headers.findIndex((h: string) => dateKeys.some(k => h === k || h.includes(k)));
+      const tc = headers.findIndex((h: string) => textKeys.some(k => h === k || h.includes(k)));
+      let ac = -1;
+      for (let c = headers.length - 1; c >= 0; c--) {
+        if (amountKeys.some(k => headers[c] === k || headers[c].includes(k))) { ac = c; break; }
+      }
+
+      if (dc >= 0 && tc >= 0 && ac >= 0) {
+        headerRow = r;
+        dateCol = dc;
+        textCol = tc;
+        amountCol = ac;
+        merchantCol = headers.findIndex((h: string) => merchantKeys.some(k => h === k || h.includes(k)));
+        break;
+      }
+    }
+
+    if (headerRow < 0) {
+      throw new Error("Kunne ikke finne header-rad i Bank Norwegian-filen");
+    }
+
+    console.log(`BN parser: header at row ${headerRow}, cols: date=${dateCol} text=${textCol} amount=${amountCol} merchant=${merchantCol}`);
+
+    const txns: ParsedTransaction[] = [];
+    const skipPatterns = /^(saldo|total|valutakurs|kjøp\/uttak|totalt andre)/i;
+    // Track seen headers to detect repeated header rows
+    const headerText = String(rows[headerRow][textCol] || "").toLowerCase();
+
+    for (let r = headerRow + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || row.length < 3) continue;
+
+      const rawDate = row[dateCol];
+      const rawText = row[textCol];
+      const rawAmount = row[amountCol];
+
+      if (rawDate == null || rawText == null || rawAmount == null) continue;
+
+      const textStr = String(rawText).trim();
+      if (!textStr) continue;
+
+      // Skip repeated header rows and summary rows
+      if (textStr.toLowerCase() === headerText) continue;
+      if (skipPatterns.test(textStr)) continue;
+      const firstCellStr = String(row[0] || "").trim();
+      if (skipPatterns.test(firstCellStr)) continue;
+
+      let bookingDate: string;
+      if (typeof rawDate === "number") {
+        bookingDate = excelDateToISO(rawDate);
+      } else {
+        const dateStr = String(rawDate).trim();
+        if (dateStr.includes(".")) {
+          const [d, m, y] = dateStr.split(".").map(Number);
+          bookingDate = toISODate(d, m, y);
+        } else if (dateStr.includes("/")) {
+          const parts = dateStr.split("/");
+          if (parts.length === 3) {
+            let [m, d, y] = parts.map(Number);
+            if (y < 100) y += 2000;
+            bookingDate = toISODate(d, m, y);
+          } else continue;
+        } else continue;
+      }
+
+      let amount: number;
+      if (typeof rawAmount === "number") {
+        amount = rawAmount;
+      } else {
+        amount = parseNorwegianNumber(String(rawAmount));
+      }
+      if (isNaN(amount) || amount === 0) continue;
+
+      // BN format: positive = expense, negative = refund/income → flip sign
+      amount = -amount;
+
+      const merchant = merchantCol >= 0 ? String(row[merchantCol] || "").trim() || undefined : undefined;
+
+      // Derive card_external_id from filename (bn_cc or bn_tb)
+      const cardId = "banknorwegian";
+
+      txns.push({
+        booking_date: bookingDate,
+        amount,
+        currency: "NOK",
+        description_raw: textStr,
+        merchant,
+        category: categorize(textStr, bnRules),
+        card_external_id: cardId,
+        cost_type: determineCostType(textStr),
+      });
+    }
+
+    console.log(`BN parser: parsed ${txns.length} transactions`);
+    return txns;
+  },
+};
+
 const csvParsers: FileParser[] = [bankParser, amexParser];
 
 // ---- Dedup hash ----
@@ -539,7 +672,13 @@ Deno.serve(async (req) => {
 
     if (isExcel) {
       fileContent = await fileResponse.arrayBuffer();
-      matchedParser = sasMCParser;
+      // Route to correct parser based on filename
+      const lowerName = importRec.file_name.toLowerCase();
+      if (lowerName.includes("bn") || lowerName.includes("norwegian")) {
+        matchedParser = bnParser;
+      } else {
+        matchedParser = sasMCParser;
+      }
     } else {
       fileContent = await fileResponse.text();
       for (const p of csvParsers) {
