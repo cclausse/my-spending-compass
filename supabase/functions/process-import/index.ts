@@ -90,6 +90,9 @@ const amexRules: Rule[] = [
 // SAS MC uses amex rules as placeholder
 const sasMCRules: Rule[] = amexRules;
 
+// Bank Norwegian uses amex-like rules
+const bnRules: Rule[] = amexRules;
+
 function categorize(description: string, rules: Rule[]): string {
   const d = description.toLowerCase();
   for (const rule of rules) {
