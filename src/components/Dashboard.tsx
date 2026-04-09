@@ -195,7 +195,7 @@ export function Dashboard() {
   };
 
   const sourceMonthlyData = useMemo(() => {
-    const map = new Map<string, Record<string, number>>();
+    const map = new Map<string, Record<string, string | number>>();
     const sources = new Set<string>();
     filtered.filter(t => t.amount < 0).forEach(t => {
       const key = format(t.date, 'yyyy-MM');
