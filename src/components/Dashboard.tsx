@@ -139,6 +139,7 @@ export function Dashboard() {
     return result;
   }, [afterCategory, descriptionFilter, costTypeFilter]);
 
+  const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
   const income = useMemo(() => filtered.filter(t => t.amount > 0), [filtered]);
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
