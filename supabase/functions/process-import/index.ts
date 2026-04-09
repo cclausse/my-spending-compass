@@ -340,16 +340,33 @@ const sasMCParser: FileParser = {
     const txns: ParsedTransaction[] = [];
     const skipRowPatterns = /^(saldo|total|valutakurs|kjøp\/uttak)/i;
 
+    // Name-to-card-holder mapping for "Totalt andre hendelser" section
+    const NAME_HOLDER_MAP: Record<string, string> = {
+      "carsten claussen": "CC",
+      "toril berge": "TB",
+      "andreas berge claussen": "ABC",
+    };
+
     for (let s = 0; s < sections.length; s++) {
       const sec = sections[s];
       // Skip "Totalt andre hendelser" sections, except for payment rows (innbetaling)
       const onlyPayments = sec.isTotaltAndre;
 
       const endRow = s + 1 < sections.length ? sections[s + 1].headerIdx : rows.length;
+      let sectionCardHolder = sec.cardHolder;
 
       for (let r = sec.headerIdx + 1; r < endRow; r++) {
         const row = rows[r];
         if (!row || row.length < 3) continue;
+
+        // In "Totalt andre hendelser", check column B for name-based card holder markers
+        if (sec.isTotaltAndre && row[1] != null) {
+          const colB = String(row[1]).trim().toLowerCase();
+          if (NAME_HOLDER_MAP[colB]) {
+            sectionCardHolder = NAME_HOLDER_MAP[colB];
+            continue; // This row is just a name marker, not a transaction
+          }
+        }
 
         const rawDate = row[sec.dateCols];
         const rawText = row[sec.textCol];
