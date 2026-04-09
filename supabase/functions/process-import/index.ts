@@ -672,7 +672,13 @@ Deno.serve(async (req) => {
 
     if (isExcel) {
       fileContent = await fileResponse.arrayBuffer();
-      matchedParser = sasMCParser;
+      // Route to correct parser based on filename
+      const lowerName = importRec.file_name.toLowerCase();
+      if (lowerName.includes("bn") || lowerName.includes("norwegian")) {
+        matchedParser = bnParser;
+      } else {
+        matchedParser = sasMCParser;
+      }
     } else {
       fileContent = await fileResponse.text();
       for (const p of csvParsers) {
