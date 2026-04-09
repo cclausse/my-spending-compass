@@ -328,8 +328,8 @@ export function Dashboard() {
           <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCategoryFilter(new Set(availableCategories))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCategoryFilter(new Set())}>Nullstill</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCategoryFilter(new Set(availableCategories)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCategoryFilter(new Set()))}>Nullstill</button>
               </div>
               {availableCategories.map(cat => (
                 <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
