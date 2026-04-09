@@ -353,7 +353,7 @@ const sasMCParser: FileParser = {
       const onlyPayments = sec.isTotaltAndre;
 
       const endRow = s + 1 < sections.length ? sections[s + 1].headerIdx : rows.length;
-      let sectionCardHolder = sec.cardHolder;
+      let sectionCardHolder = sec.cardHolder || (sec.isTotaltAndre ? "CC" : "");
 
       for (let r = sec.headerIdx + 1; r < endRow; r++) {
         const row = rows[r];
