@@ -278,6 +278,7 @@ export function Dashboard() {
   }, [expenses]);
 
 
+  if (loading) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
