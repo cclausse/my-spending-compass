@@ -374,7 +374,7 @@ export function Dashboard() {
       <div className={`grid gap-6 ${expandedCard && expandedCard !== 'transactions' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
         {/* Category Pie */}
         {(!expandedCard || expandedCard === 'pie') && (
-        <Card className={expandedCard === 'pie' ? 'col-span-full' : ''}>
+        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'pie' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
           <CardHeader className="relative">
             <CardTitle className="text-base">Forbruk per kategori</CardTitle>
             <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'pie' ? null : 'pie')} title={expandedCard === 'pie' ? 'Minimer' : 'Utvid'}>
@@ -382,7 +382,7 @@ export function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className={expandedCard === 'pie' ? 'h-[500px]' : 'h-72'}>
+            <div className={`transition-all duration-300 ease-out ${expandedCard === 'pie' ? 'h-[500px]' : 'h-72'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={expandedCard === 'pie' ? 160 : 100} dataKey="value" paddingAngle={2}>
@@ -409,7 +409,7 @@ export function Dashboard() {
 
         {/* Monthly Bar */}
         {(!expandedCard || expandedCard === 'bar') && (
-        <Card className={expandedCard === 'bar' ? 'col-span-full' : ''}>
+        <Card className={`transition-all duration-300 ease-out ${expandedCard === 'bar' ? 'col-span-full animate-scale-in' : 'animate-fade-in'}`}>
           <CardHeader className="relative">
             <CardTitle className="text-base">Månedlig oversikt</CardTitle>
             <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'bar' ? null : 'bar')} title={expandedCard === 'bar' ? 'Minimer' : 'Utvid'}>
@@ -417,7 +417,7 @@ export function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className={expandedCard === 'bar' ? 'h-[500px]' : 'h-72'}>
+            <div className={`transition-all duration-300 ease-out ${expandedCard === 'bar' ? 'h-[500px]' : 'h-72'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -435,7 +435,7 @@ export function Dashboard() {
       </div>
 
       {(!expandedCard || expandedCard === 'transactions') && (
-      <Card>
+      <Card className="transition-all duration-300 ease-out animate-fade-in">
         <CardHeader className="relative">
           <CardTitle className="text-base">Transaksjoner ({filtered.length})</CardTitle>
           <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'transactions' ? null : 'transactions')} title={expandedCard === 'transactions' ? 'Minimer' : 'Utvid'}>
