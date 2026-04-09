@@ -402,8 +402,8 @@ export function Dashboard() {
           <PopoverContent className="w-48 p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set(ALL_COST_TYPES))}>Alle</button>
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set())}>Nullstill</button>
+                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCostTypeFilter(new Set(ALL_COST_TYPES)))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCostTypeFilter(new Set()))}>Nullstill</button>
               </div>
                {ALL_COST_TYPES.map(ct => (
                 <label key={ct} className="flex items-center gap-2 cursor-pointer text-sm">
