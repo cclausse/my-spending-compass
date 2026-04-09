@@ -272,6 +272,7 @@ export function Dashboard() {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
+        {isPending && <div className="text-xs text-muted-foreground animate-pulse">Oppdaterer…</div>}
         {/* Period multi-select */}
         <Popover>
           <PopoverTrigger asChild>
