@@ -417,7 +417,7 @@ export function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className={expandedCard === 'bar' ? 'h-[500px]' : 'h-72'}>
+            <div className={`transition-all duration-300 ease-out ${expandedCard === 'bar' ? 'h-[500px]' : 'h-72'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
