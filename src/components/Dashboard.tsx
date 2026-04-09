@@ -378,8 +378,8 @@ export function Dashboard() {
             <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
               <div className="space-y-2">
                 <div className="flex gap-2">
-                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set(availableCardHolders))}>Alle</button>
-                  <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCardHolderFilter(new Set())}>Nullstill</button>
+                   <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCardHolderFilter(new Set(availableCardHolders)))}>Alle</button>
+                   <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setCardHolderFilter(new Set()))}>Nullstill</button>
                 </div>
                 {availableCardHolders.map(ch => (
                   <label key={ch} className="flex items-center gap-2 cursor-pointer text-sm">
