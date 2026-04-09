@@ -435,7 +435,7 @@ export function Dashboard() {
       </div>
 
       {(!expandedCard || expandedCard === 'transactions') && (
-      <Card>
+      <Card className="transition-all duration-300 ease-out animate-fade-in">
         <CardHeader className="relative">
           <CardTitle className="text-base">Transaksjoner ({filtered.length})</CardTitle>
           <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7" onClick={() => setExpandedCard(prev => prev === 'transactions' ? null : 'transactions')} title={expandedCard === 'transactions' ? 'Minimer' : 'Utvid'}>
