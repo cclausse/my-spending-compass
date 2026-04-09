@@ -285,7 +285,7 @@ export function Dashboard() {
               </div>
               {allMonths.map(m => (
                 <label key={m} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={monthFilter.has(m)} onCheckedChange={() => setMonthFilter(prev => toggleInSet(prev, m))} />
+                  <Checkbox checked={monthFilter.has(m)} onCheckedChange={() => toggleMonth(m)} />
                   {format(new Date(m + '-01'), 'MMMM yyyy', { locale: nb })}
                 </label>
               ))}
