@@ -106,9 +106,9 @@ export function Dashboard() {
     return Array.from(set).sort((a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b]));
   }, [afterPeriodAndSource]);
 
-  // Auto-select all categories when available categories change and filter is empty
+  // Auto-select all available categories when upstream filters change
   useEffect(() => {
-    if (availableCategories.length > 0 && categoryFilter.size === 0) {
+    if (availableCategories.length > 0) {
       setCategoryFilter(new Set(availableCategories));
     }
   }, [availableCategories]);
@@ -126,30 +126,9 @@ export function Dashboard() {
     return Array.from(set).sort();
   }, [afterCategory]);
 
-  // Step 3: final filtered result
-  const filtered = useMemo(() => {
-    let result = afterCategory;
-    if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
-    if (costTypeFilter.size > 0 && costTypeFilter.size < 3) result = result.filter(t => costTypeFilter.has(t.costType));
-    return result;
-  }, [afterCategory, descriptionFilter, costTypeFilter]);
-
-  // Clean up stale selections when available options change
-  // (category filter can only contain available categories)
-  useMemo(() => {
-    if (categoryFilter.size > 0) {
-      const valid = new Set(availableCategories);
-      const cleaned = new Set([...categoryFilter].filter(c => valid.has(c)));
-      if (cleaned.size !== categoryFilter.size) setCategoryFilter(cleaned);
-    }
-  }, [availableCategories]);
-
-  useMemo(() => {
-    if (descriptionFilter.size > 0) {
-      const valid = new Set(availableDescriptions);
-      const cleaned = new Set([...descriptionFilter].filter(d => valid.has(d)));
-      if (cleaned.size !== descriptionFilter.size) setDescriptionFilter(cleaned);
-    }
+  // Reset description filter when upstream filters change
+  useEffect(() => {
+    setDescriptionFilter(new Set());
   }, [availableDescriptions]);
 
   const expenses = useMemo(() => filtered.filter(t => t.amount < 0), [filtered]);
