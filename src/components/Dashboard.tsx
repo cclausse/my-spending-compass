@@ -129,7 +129,7 @@ export function Dashboard() {
   const filtered = useMemo(() => {
     let result = afterCategory;
     if (descriptionFilter.size > 0) result = result.filter(t => descriptionFilter.has(t.description));
-    if (costTypeFilter.size > 0 && costTypeFilter.size < 2) result = result.filter(t => costTypeFilter.has(t.costType));
+    if (costTypeFilter.size > 0 && costTypeFilter.size < 3) result = result.filter(t => costTypeFilter.has(t.costType));
     return result;
   }, [afterCategory, descriptionFilter, costTypeFilter]);
 
@@ -331,16 +331,16 @@ export function Dashboard() {
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-40 justify-start gap-2">
               <Lock className="h-4 w-4" />
-              {costTypeFilter.size === 2 ? 'F+V' : costTypeFilter.size === 0 ? 'Ingen' : [...costTypeFilter].map(c => COST_TYPE_LABELS[c]).join(', ')}
+              {costTypeFilter.size === 3 ? 'Alle' : costTypeFilter.size === 0 ? 'Ingen' : [...costTypeFilter].map(c => COST_TYPE_LABELS[c]).join(', ')}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
-                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set(['F', 'V']))}>Alle</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set(['F', 'V', 'I']))}>Alle</button>
                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setCostTypeFilter(new Set())}>Nullstill</button>
               </div>
-              {(['F', 'V'] as CostType[]).map(ct => (
+              {(['F', 'V', 'I'] as CostType[]).map(ct => (
                 <label key={ct} className="flex items-center gap-2 cursor-pointer text-sm">
                   <Checkbox checked={costTypeFilter.has(ct)} onCheckedChange={() => setCostTypeFilter(prev => toggleInSet(prev, ct))} />
                   {COST_TYPE_LABELS[ct]}
@@ -481,9 +481,14 @@ export function Dashboard() {
                     <td className="py-2 text-xs font-medium">{t.cardHolder || '–'}</td>
                     <td className="py-1">
                       <button
-                        className={`text-xs font-bold px-2 py-0.5 rounded cursor-pointer ${t.costType === 'F' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}
+                        className={`text-xs font-bold px-2 py-0.5 rounded cursor-pointer ${
+                          t.costType === 'F' ? 'bg-primary/15 text-primary' 
+                          : t.costType === 'I' ? 'bg-destructive/15 text-destructive' 
+                          : 'bg-muted text-muted-foreground'
+                        }`}
                         onClick={async () => {
-                          const newType: CostType = t.costType === 'F' ? 'V' : 'F';
+                          const cycle: Record<CostType, CostType> = { V: 'F', F: 'I', I: 'V' };
+                          const newType = cycle[t.costType];
                           try {
                             const count = await updateCostType(t.id, newType);
                             toast({ title: 'Type oppdatert', description: `${count} transaksjon${count > 1 ? 'er' : ''} med «${t.description}» satt til ${COST_TYPE_LABELS[newType]}` });
@@ -491,7 +496,7 @@ export function Dashboard() {
                             toast({ title: 'Feil', description: 'Kunne ikke oppdatere type', variant: 'destructive' });
                           }
                         }}
-                        title={`Klikk for å endre til ${t.costType === 'F' ? 'Variabel' : 'Fast'}`}
+                        title={`Klikk for å endre (V→F→I→V)`}
                       >
                         {t.costType}
                       </button>
