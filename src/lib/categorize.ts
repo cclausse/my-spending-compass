@@ -300,7 +300,8 @@ const rulesBySource: Record<TransactionSource, Rule[]> = {
   bank: bankRules,
   amex: amexRules,
   sasmc: sas_mc_Rules,
-  banknorwegian_cc: bn_cc_Rules,
+  banknorwegian: amexRules,
+  banknorwegian_cc: amexRules,
   banknorwegian_tb: amexRules,
 };
 

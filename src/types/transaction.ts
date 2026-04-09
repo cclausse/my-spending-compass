@@ -36,6 +36,7 @@ export type Category =
   | 'kultur'
   | 'per'
   | 'strom'
+  | 'innskudd'
   | 'annet';
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -74,6 +75,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   kultur: 'Kultur',
   per: 'Per',
   strom: 'Strøm',
+  innskudd: 'Innskudd',
   annet: 'Annet',
 };
 
@@ -113,6 +115,7 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   kultur: 'hsl(290, 50%, 50%)',
   per: 'hsl(175, 45%, 45%)',
   strom: 'hsl(55, 65%, 45%)',
+  innskudd: 'hsl(130, 55%, 40%)',
   annet: 'hsl(0, 0%, 55%)',
 };
 
