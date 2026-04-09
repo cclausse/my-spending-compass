@@ -7,7 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User, Lock, Maximize2, Minimize2 } from 'lucide-react';
+import { TrendingDown, TrendingUp, Wallet, ArrowUpDown, Filter, Search, Calendar, CreditCard, RefreshCw, User, Lock, Maximize2, Minimize2, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -320,18 +321,61 @@ export function Dashboard() {
                {isDefaultSelection(monthFilter, allMonths) ? 'Alle perioder' : `${monthFilter.size} perioder`}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-56 max-h-72 overflow-y-auto p-3" align="start">
+          <PopoverContent className="w-56 max-h-80 overflow-y-auto p-3" align="start">
             <div className="space-y-2">
               <div className="flex gap-2">
                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setMonthFilter(new Set(allMonths)))}>Alle</button>
                 <button className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => startTransition(() => setMonthFilter(new Set()))}>Nullstill</button>
               </div>
-              {allMonths.map(m => (
-                <label key={m} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={monthFilter.has(m)} onCheckedChange={() => toggleMonth(m)} />
-                  {format(new Date(m + '-01'), 'MMMM yyyy', { locale: nb })}
-                </label>
-              ))}
+              {(() => {
+                const byYear: Record<string, string[]> = {};
+                allMonths.forEach(m => {
+                  const year = m.slice(0, 4);
+                  if (!byYear[year]) byYear[year] = [];
+                  byYear[year].push(m);
+                });
+                const years = Object.keys(byYear).sort().reverse();
+                return years.map(year => {
+                  const months = byYear[year];
+                  const allYearSelected = months.every(m => monthFilter.has(m));
+                  const someYearSelected = months.some(m => monthFilter.has(m));
+                  const toggleYear = () => {
+                    startTransition(() => setMonthFilter(prev => {
+                      const next = new Set(prev);
+                      if (allYearSelected) {
+                        months.forEach(m => next.delete(m));
+                      } else {
+                        months.forEach(m => next.add(m));
+                      }
+                      return next;
+                    }));
+                  };
+                  return (
+                    <Collapsible key={year}>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={allYearSelected ? true : someYearSelected ? 'indeterminate' : false}
+                          onCheckedChange={toggleYear}
+                        />
+                        <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium hover:text-foreground cursor-pointer flex-1">
+                          {year}
+                          <ChevronDown className="h-3 w-3 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                        </CollapsibleTrigger>
+                      </div>
+                      <CollapsibleContent>
+                        <div className="ml-6 mt-1 space-y-1">
+                          {months.map(m => (
+                            <label key={m} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <Checkbox checked={monthFilter.has(m)} onCheckedChange={() => toggleMonth(m)} />
+                              {format(new Date(m + '-01'), 'MMM', { locale: nb })}
+                            </label>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                });
+              })()}
             </div>
           </PopoverContent>
         </Popover>
