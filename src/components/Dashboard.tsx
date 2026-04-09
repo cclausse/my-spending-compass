@@ -333,7 +333,7 @@ export function Dashboard() {
               </div>
               {availableCategories.map(cat => (
                 <label key={cat} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Checkbox checked={categoryFilter.has(cat)} onCheckedChange={() => setCategoryFilter(prev => toggleInSet(prev, cat))} />
+                  <Checkbox checked={categoryFilter.has(cat)} onCheckedChange={() => toggleCategory(cat)} />
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat] }} />
                   {CATEGORY_LABELS[cat]}
                 </label>
